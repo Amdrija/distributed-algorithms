@@ -16,11 +16,11 @@ RUN apt-get -y install file unzip zip xz-utils git \
 
 # ADD docker/apache-maven-3.6.3-bin.tar.gz /usr/local
 # RUN ln -s /usr/local/apache-maven-3.6.3/bin/mvn /usr/local/bin
-COPY template_cpp /root/template_cpp
+
 # COPY template_java /root/template_java
 WORKDIR /root/template_cpp
-
 COPY example ./example
 COPY tools ./tools
 RUN mkdir run_logs
+COPY template_cpp /root/template_cpp
 RUN ./build.sh
