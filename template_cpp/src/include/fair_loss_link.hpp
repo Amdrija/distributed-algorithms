@@ -10,7 +10,6 @@
 
 // technically, the actual size is lower, but a few bytes should not make an impact
 #define MAX_BUFFER_SIZE 65535
-#define IPV4_CHAR_SIZE 16
 
 class FairLossLink {
 private:
@@ -43,20 +42,18 @@ public:
         return sendto(socket_fd, message.c_str(), message.length(), 0, reinterpret_cast<sockaddr*>(&destination), sizeof(destination));
     }
 
-    void start_receiving(std::function<void(std::string, const std::string)> handler) {
+    void start_receiving(std::function<void(const uint32_t, const uint16_t, const std::string)> handler) {
         char buffer[MAX_BUFFER_SIZE];
-        char source_buffer[IPV4_CHAR_SIZE];
-        sockaddr_in source_address;
-        socklen_t source_length;
-        auto received_length = recvfrom(socket_fd, buffer, MAX_BUFFER_SIZE, 0, reinterpret_cast<sockaddr*>(&source_address), &source_length);
+        sockaddr_in source;
+        socklen_t source_length = sizeof(source);
+
+        auto received_length = recvfrom(socket_fd, buffer, MAX_BUFFER_SIZE, 0, reinterpret_cast<sockaddr*>(&source), &source_length);
         while(received_length >= 0) {
             std::string message = std::string(buffer, received_length);
-            inet_ntop(AF_INET,&(source_address.sin_addr), source_buffer, IPV4_CHAR_SIZE);
-            std::string source = std::string(source_buffer, IPV4_CHAR_SIZE);
-            source.append(":");
-            source.append(std::to_string((int)ntohs(source_address.sin_port))); 
-            handler(source, message);
-            received_length = recvfrom(socket_fd, buffer, MAX_BUFFER_SIZE, 0, reinterpret_cast<sockaddr*>(&source_address), &source_length);
+
+            handler(source.sin_addr.s_addr, source.sin_port, message);
+    
+            received_length = recvfrom(socket_fd, buffer, MAX_BUFFER_SIZE, 0, reinterpret_cast<sockaddr*>(&source), &source_length);
         }
 
         std::cout << "Stopped receiveing on address: " << this->ip_address << ":" << this->port << std::endl;

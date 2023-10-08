@@ -68,10 +68,18 @@ int main(int argc, char **argv) {
 
   std::cout << "Broadcasting and delivering messages...\n\n";
 
-  auto link = new FairLossLink("127.0.0.1",11001);
-  link->send("127.0.0.1",11001, "Test message");
-  link->send("127.0.0.1",11001, "2");
-  link->start_receiving([](std::string source, std::string message){
+  auto link1 = new FairLossLink("127.0.0.1",11001);
+  auto link2 = new FairLossLink("127.0.0.1", 11002);
+  link1->send("127.0.0.1",11002, "Test message");
+  link1->send("127.0.0.1",11002, "2");
+  link1->send("127.0.0.1",11002, "3");
+
+  link2->start_receiving([](const uint32_t source_ip, const uint16_t source_port, std::string message) {
+    char source_buffer[16];
+    inet_ntop(AF_INET,&(source_ip), source_buffer, 16);
+    std::string source = std::string(source_buffer, 16);
+    source.append(":");
+    source.append(std::to_string((int)ntohs(source_port))); 
     std::cout<<"Received: " << message << "| from: " << source << std::endl;
   });
 
