@@ -4,6 +4,7 @@
 
 #include "parser.hpp"
 #include "hello.h"
+#include "fair_loss_link.hpp"
 #include <signal.h>
 
 
@@ -66,6 +67,18 @@ int main(int argc, char **argv) {
   std::cout << "Doing some initialization...\n\n";
 
   std::cout << "Broadcasting and delivering messages...\n\n";
+
+  auto link = new FairLossLink(strdup("127.0.0.1"),11001);
+  char* message = strdup("test");
+  link->send(strdup("127.0.0.1"),11001, reinterpret_cast<void*>(message), 5);
+
+  char received[5];
+  sockaddr_in rcv;
+  socklen_t len;
+  ssize_t length = link->receive(received, 5, reinterpret_cast<sockaddr*>(&rcv), &len);
+  char* src = strdup("123.456.789.012");
+  inet_ntop(AF_INET,&(rcv.sin_addr), src, 16); 
+  std::cout << "Received: " << received << "| from: " << src << ":" << ntohs(rcv.sin_port) << std::endl;
 
   std::cout << "Changed\n";
   // After a process finishes broadcasting,
