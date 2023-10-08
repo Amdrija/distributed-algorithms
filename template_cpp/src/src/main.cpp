@@ -67,6 +67,7 @@ int main(int argc, char **argv) {
 
   std::cout << "Broadcasting and delivering messages...\n\n";
 
+  std::cout << "Changed\n";
   // After a process finishes broadcasting,
   // it waits forever for the delivery of messages.
   while (true) {
