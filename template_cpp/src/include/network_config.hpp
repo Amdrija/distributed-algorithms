@@ -1,3 +1,5 @@
+#pragma once
+
 #include "string_helpers.hpp"
 #include <fstream>
 #include <iostream>
@@ -14,15 +16,15 @@ public:
         this->sender_id = std::stoul(args[1]);
     }
 
-    u_int64_t get_sender_id() {
+    uint64_t get_sender_id() {
         return sender_id;
     }
 
-    u_int64_t get_message_count() {
+    uint64_t get_message_count() {
         return message_count;
     }
 
 private:
-    u_int64_t sender_id;
-    u_int64_t message_count;
+    uint64_t sender_id;
+    uint64_t message_count;
 };

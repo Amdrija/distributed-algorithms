@@ -7,7 +7,7 @@
 
 class HostLookup {
 private:
-    std::map<u_int32_t, std::map<u_int16_t, u_int64_t>> map;
+    std::map<uint32_t, std::map<uint16_t, uint64_t>> map;
 
 public:
     HostLookup(std::string file_name) {

@@ -73,14 +73,16 @@ int main(int argc, char **argv) {
     std::cout << "Broadcasting and delivering messages...\n\n";
 
     auto link = new FairLossLink("127.0.0.1", 11001);
+    std::cout << "fail" << std::endl;
+    Message m("127.0.0.1", 11001, TransportMessage("Hello"));
+    std::cout << "Sending m" << std::endl;
+    link->send(m);
+    std::cout << "Sent: " << m.transport_message.payload.get()[4] << std::endl;
 
-    link->start_receiving([](const uint32_t source_ip, const uint16_t source_port, std::string message) {
-        char source_buffer[16];
-        inet_ntop(AF_INET, &(source_ip), source_buffer, 16);
-        std::string source = std::string(source_buffer, 16);
-        source.append(":");
-        source.append(std::to_string((int)ntohs(source_port)));
-        std::cout << "Received: " << message << "| from: " << source << std::endl;
+    link->start_receiving([](Message message) {
+        std::cout << "Recevied m" << std::endl;
+        std::string body(message.transport_message.payload.get(), message.transport_message.length);
+        std::cout << "Received: " << body << "| from: " << message.get_readable_ip() << std::endl;
     });
 
     std::cout << "Changed\n";
