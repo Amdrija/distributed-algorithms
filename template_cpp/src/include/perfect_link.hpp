@@ -10,7 +10,7 @@ private:
     FairLossLink link;
 
 public:
-    PerfectLink(const std::string &ip_address, unsigned short port) : link(ip_address, port) {
+    PerfectLink(Address address) : link(address) {
     }
 
     void send(const std::string &destination_address, unsigned short desination_port, const std::string &message) {

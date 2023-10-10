@@ -1,6 +1,7 @@
 #pragma once
 
-#include "message.hpp"
+#include "address.hpp"
+#include "transport_message.hpp"
 #include <arpa/inet.h>
 #include <cstring>
 #include <functional>
@@ -16,41 +17,33 @@
 class FairLossLink {
 private:
     int socket_fd;
-    sockaddr_in address;
-    uint32_t ip_address;
-    uint16_t port;
+    Address address;
 
 public:
-    FairLossLink(const std::string &ip_address, uint16_t port) : FairLossLink(ntohl(inet_addr(ip_address.c_str())), port) {
-    }
-
-    FairLossLink(const uint32_t ip_address, uint16_t port) {
+    FairLossLink(Address address) : address(address) {
+        this->address = address;
         socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
         if (socket_fd < 0) {
-            std::cout << "Error while opening socket on address: " << ip_address << ":" << port << std::endl;
+            std::cout << "Error while opening socket on address: " << address.to_string() << std::endl;
             exit(1);
         }
 
-        create_socket_address(ip_address, port, &address);
-
-        if (bind(socket_fd, reinterpret_cast<sockaddr *>(&address), sizeof(address)) == -1) {
-            std::cout << "Error while binding the socket on address: " << ip_address << ":" << port << std::endl;
+        auto sock_addr = this->address.to_sockaddr();
+        if (bind(socket_fd, reinterpret_cast<sockaddr *>(&sock_addr), sizeof(sock_addr)) == -1) {
+            std::cout << "Error while binding the socket on address: " << address.to_string() << std::endl;
             exit(1);
         }
-
-        this->ip_address = ip_address;
     }
 
-    void send(Message &message) {
-        sockaddr_in address;
-        create_socket_address(message.ip, message.port, &address);
+    void send(TransportMessage message) {
+        sockaddr_in address = message.address.to_sockaddr();
 
         uint64_t serialized_length = 0;
-        std::shared_ptr<char[]> payload = message.transport_message.serialize(serialized_length);
+        std::shared_ptr<char[]> payload = message.serialize(serialized_length);
         sendto(socket_fd, payload.get(), serialized_length, 0, reinterpret_cast<sockaddr *>(&address), sizeof(address));
     }
 
-    void start_receiving(std::function<void(Message)> handler) {
+    void start_receiving(std::function<void(TransportMessage)> handler) {
         char buffer[MAX_BUFFER_SIZE];
         sockaddr_in source;
         socklen_t source_length = sizeof(source);
@@ -61,14 +54,13 @@ public:
                 std::cout << buffer[i] + 1 << "|";
             }
             std::cout << "\nReceived: " << buffer[0] << " " << received_length << std::endl;
-            TransportMessage message = TransportMessage::deserialize(buffer, received_length);
 
-            handler(Message(ntohl(source.sin_addr.s_addr), ntohs(source.sin_port), message));
+            handler(TransportMessage::deserialize(Address(source), buffer, received_length));
 
             received_length = recvfrom(socket_fd, buffer, MAX_BUFFER_SIZE, 0, reinterpret_cast<sockaddr *>(&source), &source_length);
         }
 
-        std::cout << "Stopped receiveing on address: " << this->ip_address << ":" << this->port << std::endl;
+        std::cout << "Stopped receiveing on address: " << this->address.to_string() << std::endl;
     }
 
 private:
