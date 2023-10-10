@@ -8,20 +8,27 @@
 #include <string>
 
 class TransportMessage {
-public:
-    Address address;
+private:
     uint64_t id;
-    uint64_t length;
-    std::shared_ptr<char[]> payload;
+    std::unique_ptr<char[]> payload;
 
-    TransportMessage(Address address, const std::string &m) : TransportMessage(address, m.c_str(), m.length()) {
+public:
+    const Address address;
+    const uint64_t length;
+
+    TransportMessage(Address address, const std::string &m) : TransportMessage(address, 0, m.c_str(), m.length()) {
     }
 
-    TransportMessage(Address address, const char *bytes, uint64_t length) : address(address), payload(new char[length]) {
-        this->id = UINT64_MAX;
-        this->length = length;
+    TransportMessage(Address address, uint64_t id, const char *bytes, uint64_t length) : id(id), payload(new char[length]), address(address), length(length) {
         std::memcpy(payload.get(), bytes, length);
     }
+
+    TransportMessage(Address address, const char *bytes, uint64_t length) : id(0), payload(new char[length - 8]), address(address), length(length - 8) {
+        std::memcpy(&this->id, bytes, 8);
+        std::memcpy(payload.get(), bytes + 8, length - 8);
+    }
+
+    TransportMessage(TransportMessage &&m) : id(m.id), payload(std::move(m.payload)), address(m.address), length(m.length) {}
 
     std::unique_ptr<char[]> serialize(uint64_t &serialized_length) {
         serialized_length = this->length + 8;
@@ -32,13 +39,7 @@ public:
         return std::move(bytes);
     }
 
-    static TransportMessage deserialize(Address address, const char *bytes, uint64_t length) {
-        TransportMessage m(address, bytes + 8, length - 8);
-        std::memcpy(&m.id, bytes, 8);
-
-        return m;
+    std::unique_ptr<char[]> get_payload() && {
+        return std::move(this->payload);
     }
-
-private:
-    // static std::atomic<uint64_t> counter;
 };

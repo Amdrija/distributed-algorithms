@@ -7,19 +7,16 @@
 
 class Address {
 public:
-    uint32_t ip;
-    uint16_t port;
+    const uint32_t ip;
+    const uint16_t port;
 
-    Address(sockaddr_in ipv4) : Address(ntohl(ipv4.sin_addr.s_addr), ntohs(ipv4.sin_port)) {}
+    Address(sockaddr_in ipv4) : Address((ntohl(ipv4.sin_addr.s_addr)), ntohs(ipv4.sin_port)) {}
 
-    Address(const std::string &ip, uint16_t port) : Address(ntohl(inet_addr(ip.c_str())), port) {}
+    Address(const std::string &ip, uint16_t port) : Address((ntohl(inet_addr(ip.c_str()))), port) {}
 
-    Address(uint32_t ip, uint16_t port) {
-        this->ip = ip;
-        this->port = port;
-    }
+    Address(uint32_t ip, uint16_t port) : ip(ip), port(port) {}
 
-    std::string to_string() {
+    std::string to_string() const {
         char source_buffer[16];
         in_addr net_ip;
         net_ip.s_addr = htonl(this->ip);
@@ -30,7 +27,7 @@ public:
         return result;
     }
 
-    sockaddr_in to_sockaddr() {
+    sockaddr_in to_sockaddr() const {
         sockaddr_in address;
         memset(reinterpret_cast<void *>(&address), 0, sizeof(address));
         address.sin_family = AF_INET;

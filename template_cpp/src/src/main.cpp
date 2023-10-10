@@ -73,15 +73,11 @@ int main(int argc, char **argv) {
     std::cout << "Broadcasting and delivering messages...\n\n";
 
     auto link = FairLossLink(Address("127.0.0.1", 11001));
-    std::cout << "fail" << std::endl;
-    TransportMessage m(Address("127.0.0.1", 11001), "Hello");
-    std::cout << "Sending m" << std::endl;
-    link.send(m);
-    std::cout << "Sent: " << m.payload.get()[4] << std::endl;
+    link.send(TransportMessage(Address("127.0.0.1", 11001), "Hell"));
 
     link.start_receiving([](TransportMessage message) {
         std::cout << "Recevied m" << std::endl;
-        std::string body(message.payload.get(), message.length);
+        std::string body(std::move(std::move(message).get_payload()).get(), message.length);
         std::cout << "Received: " << body << "| from: " << message.address.to_string() << std::endl;
     });
 

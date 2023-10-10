@@ -17,11 +17,10 @@
 class FairLossLink {
 private:
     int socket_fd;
-    Address address;
+    const Address address;
 
 public:
     FairLossLink(Address address) : address(address) {
-        this->address = address;
         socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
         if (socket_fd < 0) {
             std::cout << "Error while opening socket on address: " << address.to_string() << std::endl;
@@ -35,11 +34,11 @@ public:
         }
     }
 
-    void send(TransportMessage message) {
+    void send(TransportMessage &&message) {
         sockaddr_in address = message.address.to_sockaddr();
 
         uint64_t serialized_length = 0;
-        std::shared_ptr<char[]> payload = message.serialize(serialized_length);
+        std::unique_ptr<char[]> payload = message.serialize(serialized_length);
         sendto(socket_fd, payload.get(), serialized_length, 0, reinterpret_cast<sockaddr *>(&address), sizeof(address));
     }
 
@@ -55,23 +54,11 @@ public:
             }
             std::cout << "\nReceived: " << buffer[0] << " " << received_length << std::endl;
 
-            handler(TransportMessage::deserialize(Address(source), buffer, received_length));
+            handler(TransportMessage(Address(source), buffer, received_length));
 
             received_length = recvfrom(socket_fd, buffer, MAX_BUFFER_SIZE, 0, reinterpret_cast<sockaddr *>(&source), &source_length);
         }
 
         std::cout << "Stopped receiveing on address: " << this->address.to_string() << std::endl;
-    }
-
-private:
-    void create_socket_address(const uint32_t ip_address, uint16_t port, sockaddr_in *address) {
-        memset(reinterpret_cast<void *>(address), 0, sizeof(address));
-        address->sin_family = AF_INET;
-        address->sin_addr.s_addr = htonl(ip_address);
-        address->sin_port = htons(port);
-    }
-
-    void create_socket_address(const std::string &ip_address, uint16_t port, sockaddr_in *address) {
-        create_socket_address(inet_addr(ip_address.c_str()), port, address);
     }
 };
