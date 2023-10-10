@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 
     link.start_receiving([](TransportMessage message) {
         std::cout << "Recevied m" << std::endl;
-        std::string body(std::move(std::move(message).get_payload()).get(), message.length);
+        std::string body(std::move(message).get_payload().get(), message.length);
         std::cout << "Received: " << body << "| from: " << message.address.to_string() << std::endl;
     });
 
