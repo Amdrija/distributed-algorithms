@@ -4,6 +4,7 @@
 
 #include "fair_loss_link.hpp"
 #include "hello.h"
+#include "network_config.hpp"
 #include "parser.hpp"
 #include <signal.h>
 
@@ -44,7 +45,7 @@ int main(int argc, char **argv) {
 
     std::cout << "List of resolved hosts is:\n";
     std::cout << "==========================\n";
-    //TODO: Convert to a map for faster reads
+    // TODO: Convert to a map for faster reads
     auto hosts = parser.hosts();
     for (auto &host : hosts) {
         std::cout << host.id << "\n";
@@ -59,12 +60,13 @@ int main(int argc, char **argv) {
     std::cout << "Path to output:\n";
     std::cout << "===============\n";
     std::cout << parser.outputPath() << "\n\n";
-    //TODO: Write to OUTPUT
+    // TODO: Write to OUTPUT
 
     std::cout << "Path to config:\n";
     std::cout << "===============\n";
     std::cout << parser.configPath() << "\n\n";
-    //TODO: Setup config, who's listening and who's sending.
+    NetworkConfig config(parser.configPath());
+    std::cout << "Sender id: " << config.get_sender_id() << " messages: " << config.get_message_count() << std::endl;
 
     std::cout << "Doing some initialization...\n\n";
 
