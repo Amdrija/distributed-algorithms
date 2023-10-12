@@ -13,11 +13,11 @@ public:
         getline(file, line);
         std::vector<std::string> args = StringHelpers::split(line, " ");
         this->message_count = std::stoul(args[0]);
-        this->sender_id = std::stoul(args[1]);
+        this->receiver_id = std::stoul(args[1]);
     }
 
-    uint64_t get_sender_id() {
-        return sender_id;
+    uint64_t get_receiver_id() {
+        return receiver_id;
     }
 
     uint64_t get_message_count() {
@@ -25,6 +25,6 @@ public:
     }
 
 private:
-    uint64_t sender_id;
+    uint64_t receiver_id;
     uint64_t message_count;
 };

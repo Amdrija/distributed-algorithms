@@ -17,9 +17,9 @@
 class FairLossLink {
 private:
     int socket_fd;
-    const Address address;
 
 public:
+    const Address address;
     FairLossLink(Address address) : address(address) {
         socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
         if (socket_fd < 0) {
@@ -34,7 +34,7 @@ public:
         }
     }
 
-    void send(TransportMessage &&message) {
+    void send(TransportMessage message) {
         sockaddr_in address = message.address.to_sockaddr();
 
         uint64_t serialized_length = 0;
@@ -49,11 +49,6 @@ public:
 
         auto received_length = recvfrom(socket_fd, buffer, MAX_BUFFER_SIZE, 0, reinterpret_cast<sockaddr *>(&source), &source_length);
         while (received_length >= 0) {
-            for (int i = 0; i < 8; i++) {
-                std::cout << buffer[i] + 1 << "|";
-            }
-            std::cout << "\nReceived: " << buffer[0] << " " << received_length << std::endl;
-
             handler(TransportMessage(Address(source), buffer, received_length));
 
             received_length = recvfrom(socket_fd, buffer, MAX_BUFFER_SIZE, 0, reinterpret_cast<sockaddr *>(&source), &source_length);

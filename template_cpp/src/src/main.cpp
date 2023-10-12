@@ -2,11 +2,15 @@
 #include <iostream>
 #include <thread>
 
-#include "fair_loss_link.hpp"
 #include "hello.h"
+#include "host_lookup.hpp"
 #include "network_config.hpp"
 #include "parser.hpp"
+#include "perfect_link.hpp"
+#include <fstream>
 #include <signal.h>
+
+std::shared_ptr<std::ofstream> output_file(new std::ofstream);
 
 static void stop(int) {
     // reset signal handlers to default
@@ -17,6 +21,9 @@ static void stop(int) {
     std::cout << "Immediately stopping network packet processing.\n";
 
     // write/flush output file if necessary
+    std::cout << "Writing output.\n";
+    output_file.get()->flush();
+    output_file.get()->close();
     std::cout << "Writing output.\n";
 
     // exit directly from signal handler
@@ -56,37 +63,56 @@ int main(int argc, char **argv) {
         std::cout << "\n";
     }
     std::cout << "\n";
+    HostLookup host_lookup(parser.hostsPath());
 
     std::cout << "Path to output:\n";
     std::cout << "===============\n";
     std::cout << parser.outputPath() << "\n\n";
-    // TODO: Write to OUTPUT
+
+    output_file.get()->open(parser.outputPath(), std::ofstream::out);
+
+    if (!output_file.get()) {
+        std::cout << "Failed to open the file: " << parser.outputPath() << std::endl;
+    }
 
     std::cout << "Path to config:\n";
     std::cout << "===============\n";
     std::cout << parser.configPath() << "\n\n";
     NetworkConfig config(parser.configPath());
-    std::cout << "Sender id: " << config.get_sender_id() << " messages: " << config.get_message_count() << std::endl;
+    std::cout << "Receiver id: " << config.get_receiver_id() << " messages: " << config.get_message_count() << std::endl;
+    auto receiver_id = config.get_receiver_id();
 
     std::cout << "Doing some initialization...\n\n";
+    auto link = PerfectLink(host_lookup.get_address_by_host_id(parser.id()));
 
     std::cout << "Broadcasting and delivering messages...\n\n";
 
-    auto link = FairLossLink(Address("127.0.0.1", 11001));
-    link.send(TransportMessage(Address("127.0.0.1", 11001), "Hell"));
+    std::thread t;
+    if (config.get_receiver_id() == parser.id()) {
+        std::cout << "Started receiving on: " << link.get_address().to_string() << std::endl;
+        t = link.start_receiving([&host_lookup, receiver_id](TransportMessage message) {
+            *output_file.get() << "d " << host_lookup.get_host_id_by_ip(message.address) << " " << message.get_id() << std::endl;
+        });
+    } else {
+        Address receiver_address = host_lookup.get_address_by_host_id(config.get_receiver_id());
+        for (uint64_t i = 0; i < config.get_message_count(); i++) {
+            auto m = EmptyMessage();
+            *output_file.get() << "b " << m.id << std::endl;
+            link.send(receiver_address, m);
+        }
+        t = link.start_sending();
+    }
 
-    link.start_receiving([](TransportMessage message) {
-        std::cout << "Recevied m" << std::endl;
-        std::string body(std::move(message).get_payload().get(), message.length);
-        std::cout << "Received: " << body << "| from: " << message.address.to_string() << std::endl;
-    });
-
-    std::cout << "Changed\n";
     // After a process finishes broadcasting,
     // it waits forever for the delivery of messages.
     while (true) {
         std::this_thread::sleep_for(std::chrono::hours(1));
     }
+
+    t.join();
+
+    // output_file.get()->flush();
+    // output_file.get()->close();
 
     return 0;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "address.hpp"
 #include "string_helpers.hpp"
 #include <arpa/inet.h>
 #include <fstream>
@@ -7,7 +8,8 @@
 
 class HostLookup {
 private:
-    std::map<uint32_t, std::map<uint16_t, uint64_t>> map;
+    std::map<uint32_t, std::map<uint16_t, uint64_t>> address_to_host;
+    std::map<uint64_t, Address> host_to_address;
 
 public:
     HostLookup(std::string file_name) {
@@ -21,23 +23,24 @@ public:
             // splitted[2] is the port
             std::vector<std::string> split_vec = StringHelpers::split(line, " ");
 
-            uint32_t ipv4 = convert_ipv4_to_unsigned_int(split_vec[1]);
-            uint16_t port = std::stoi(split_vec[2]);
             uint64_t id = std::stoul(split_vec[0]);
-            map[ipv4][port] = id;
+            std::string ip = split_vec[1] == "localhost" ? "127.0.0.1" : split_vec[1];
+            Address address = Address(ip, static_cast<uint16_t>(std::stoul(split_vec[2])));
+            host_to_address.emplace(id, address);
+            address_to_host[address.ip][address.port] = id;
         }
     }
 
     // In a system of n identifiers, the processes have ids from 1 to n
     // this function can therefore return 0 if it cannot find a process
     // with specified ip.
-    uint16_t get_host_id_by_ip(uint32_t ipv4, uint16_t port) {
-        auto inner_map = map.find(ipv4);
-        if (inner_map == map.end()) {
+    uint64_t get_host_id_by_ip(Address address) {
+        auto inner_map = address_to_host.find(address.ip);
+        if (inner_map == address_to_host.end()) {
             return 0;
         }
 
-        auto id = inner_map->second.find(port);
+        auto id = inner_map->second.find(address.port);
         if (id == inner_map->second.end()) {
             return 0;
         }
@@ -45,9 +48,17 @@ public:
         return id->second;
     }
 
+    Address get_address_by_host_id(uint64_t id) {
+        auto pair = host_to_address.find(id);
+
+        return pair == host_to_address.end() ? Address(0, 0) : pair->second;
+    }
+
 private:
     unsigned int convert_ipv4_to_unsigned_int(const std::string &ipv4) {
-        if (ipv4 == "localhost") {
+        std::cout << "|" << ipv4 << "|" << std::endl;
+        if (ipv4.compare("localhost")) {
+            std::cout << "convert" << std::endl;
             return inet_addr("127.0.0.1");
         }
 

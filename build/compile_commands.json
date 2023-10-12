@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/build",
+  "command": "/usr/bin/g++  -I/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src/include -g -o CMakeFiles/da_proc.dir/src/main.o -c /home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src/src/main.cpp",
+  "file": "/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src/src/main.cpp",
+  "output": "CMakeFiles/da_proc.dir/src/main.o"
+},
+{
+  "directory": "/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/build",
+  "command": "/usr/bin/gcc  -I/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src/include -g -o CMakeFiles/da_proc.dir/src/hello.o -c /home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src/src/hello.c",
+  "file": "/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src/src/hello.c",
+  "output": "CMakeFiles/da_proc.dir/src/hello.o"
+},
+{
+  "directory": "/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/build",
+  "command": "/usr/bin/g++  -I/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src/include -g -o CMakeFiles/da_proc.dir/src/message.o -c /home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src/src/message.cpp",
+  "file": "/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src/src/message.cpp",
+  "output": "CMakeFiles/da_proc.dir/src/message.o"
+}
+]

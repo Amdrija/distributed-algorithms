@@ -10,7 +10,7 @@ private:
 public:
     void push(T item) {
         lock.lock();
-        q.push(item);
+        q.push(std::move(item));
         lock.unlock();
     }
 
@@ -23,18 +23,14 @@ public:
         return empty;
     }
 
-    void dequeue() {
+    T dequeue() {
         lock.lock();
-        item = q.pop();
-        lock.unlock();
-
-        return item;
-    }
-
-    T first() {
-        T item;
-        lock.lock();
-        item = q.front();
+        if (q.empty()) {
+            lock.unlock();
+            throw 0;
+        }
+        T item = q.front();
+        q.pop();
         lock.unlock();
 
         return item;
