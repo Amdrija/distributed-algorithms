@@ -1,8 +1,10 @@
+#pragma once
+
 #include <mutex>
+#include <optional>
 #include <queue>
 
-template <typename T>
-class ConcurrentQueue {
+template <typename T> class ConcurrentQueue {
 private:
     std::queue<T> q;
     std::mutex lock;
@@ -15,21 +17,16 @@ public:
     }
 
     bool is_empty() {
-        bool empty;
         lock.lock();
-        empty = q.empty();
+        bool empty = q.empty();
         lock.unlock();
 
         return empty;
     }
 
-    T dequeue() {
+    std::optional<T> dequeue() {
         lock.lock();
-        if (q.empty()) {
-            lock.unlock();
-            throw 0;
-        }
-        T item = q.front();
+        std::optional<T> item = q.empty() ? std::nullopt : std::make_optional<T>(q.front());
         q.pop();
         lock.unlock();
 

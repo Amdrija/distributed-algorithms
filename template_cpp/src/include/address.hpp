@@ -36,4 +36,6 @@ public:
 
         return address;
     }
+
+    uint64_t to_uint64_t() const { return (this->ip << 16) + this->port; }
 };

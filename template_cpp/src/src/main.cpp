@@ -75,32 +75,48 @@ int main(int argc, char **argv) {
         std::cout << "Failed to open the file: " << parser.outputPath() << std::endl;
     }
 
+    // Address a("127.0.0.1", 11005);
+    // TransportMessage tm(a, 13, std::shared_ptr<char[]>(new char[0]), 0, false);
+    // TransportMessage tm_ack(a, 14, std::shared_ptr<char[]>(new char[0]), 0, false);
+    // uint64_t length_tm;
+    // uint64_t length_ack;
+    // auto payload_tm = tm.serialize(length_tm);
+    // auto tm_de = TransportMessage(a, payload_tm.get(), length_tm);
+    // std::cout << "Deserialize " << tm_de.get_id() << " " << tm_de.is_ack << std::endl;
+    // auto payload_ack = tm_ack.serialize(length_ack);
+    // auto tm_ack_de = TransportMessage(a, payload_ack.get(), length_ack);
+    // std::cout << "Deserialize " << tm_ack_de.get_id() << " " << tm_ack_de.is_ack << std::endl;
+
+    // return 0;
+
     std::cout << "Path to config:\n";
     std::cout << "===============\n";
     std::cout << parser.configPath() << "\n\n";
     NetworkConfig config(parser.configPath());
-    std::cout << "Receiver id: " << config.get_receiver_id() << " messages: " << config.get_message_count() << std::endl;
+    std::cout << "Receiver id: " << config.get_receiver_id()
+              << " messages: " << config.get_message_count() << std::endl;
     auto receiver_id = config.get_receiver_id();
 
-    std::cout << "Doing some initialization...\n\n";
-    auto link = PerfectLink(host_lookup.get_address_by_host_id(parser.id()));
+    auto link = PerfectLink(host_lookup.get_address_by_host_id(parser.id()), host_lookup);
 
     std::cout << "Broadcasting and delivering messages...\n\n";
-
-    std::thread t;
+    std::thread t, t3;
     if (config.get_receiver_id() == parser.id()) {
         std::cout << "Started receiving on: " << link.get_address().to_string() << std::endl;
-        t = link.start_receiving([&host_lookup, receiver_id](TransportMessage message) {
-            *output_file.get() << "d " << host_lookup.get_host_id_by_ip(message.address) << " " << message.get_id() << std::endl;
+        t = link.start_receiving([host_lookup, receiver_id](TransportMessage message) {
+            *output_file.get() << "d " << host_lookup.get_host_id_by_ip(message.address) << " "
+                               << message.get_id() << std::endl;
         });
     } else {
         Address receiver_address = host_lookup.get_address_by_host_id(config.get_receiver_id());
         for (uint64_t i = 0; i < config.get_message_count(); i++) {
             auto m = EmptyMessage();
-            *output_file.get() << "b " << m.id << std::endl;
+            *output_file.get() << "b " << m.get_id() << std::endl;
             link.send(receiver_address, m);
         }
         t = link.start_sending();
+        t3 = link.start_receiving(
+            [](TransportMessage m) { std::cout << "Received ack: " << m.get_id() << std::endl; });
     }
 
     // After a process finishes broadcasting,
@@ -109,6 +125,7 @@ int main(int argc, char **argv) {
         std::this_thread::sleep_for(std::chrono::hours(1));
     }
 
+    t3.join();
     t.join();
 
     // output_file.get()->flush();

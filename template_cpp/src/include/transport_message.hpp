@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <string>
 
@@ -15,30 +16,42 @@ private:
 public:
     const Address address;
     const uint64_t length;
+    bool is_ack;
 
-    TransportMessage(Address address, const uint64_t id, std::shared_ptr<char[]> payload, const uint64_t length) : id(id), payload(payload), address(address), length(length) {
+    // constructor for creating transport message from message
+    TransportMessage(Address address, const uint64_t id, std::shared_ptr<char[]> payload,
+                     const uint64_t length, bool is_ack = false)
+        : id(id), payload(payload), address(address), length(length), is_ack(is_ack) {
         // std::memcpy(payload.get(), bytes, length);
     }
 
-    TransportMessage(Address address, const char *bytes, uint64_t length) : id(0), payload(new char[length - 8]), address(address), length(length - 8) {
-        std::memcpy(&this->id, bytes, 8);
-        std::memcpy(payload.get(), bytes + 8, length - 8);
+    // constructor for deserializing a message
+    TransportMessage(Address address, const char *bytes, uint64_t length)
+        : id(0), payload(new char[length - sizeof(uint64_t) - sizeof(bool)]), address(address),
+          length(length - sizeof(uint64_t) - sizeof(bool)) {
+        std::cout << "Andrija" << std::endl;
+        std::memcpy(&this->id, bytes, sizeof(uint64_t));
+        std::memcpy(&this->is_ack, bytes + sizeof(uint64_t), sizeof(bool));
+        std::cout << "Message: " << this->id << " ack: " << this->is_ack << std::endl;
+        std::memcpy(payload.get(), bytes + sizeof(uint64_t) + sizeof(bool),
+                    length - sizeof(uint64_t) - sizeof(bool));
+        std::cout << "Andrija6" << std::endl;
     }
 
     std::unique_ptr<char[]> serialize(uint64_t &serialized_length) {
-        serialized_length = this->length + 8;
+        serialized_length = this->length + sizeof(uint64_t) + sizeof(bool);
         std::unique_ptr<char[]> bytes = std::unique_ptr<char[]>(new char[serialized_length]);
-        std::memcpy(bytes.get(), &this->id, 8);
-        std::memcpy(bytes.get() + 8, this->payload.get(), this->length);
+        std::memcpy(bytes.get(), &this->id, sizeof(uint64_t));
+        std::memcpy(bytes.get() + sizeof(uint64_t), &this->is_ack, sizeof(bool));
+        std::memcpy(bytes.get() + sizeof(uint64_t) + sizeof(bool), this->payload.get(),
+                    this->length);
+        std::cout << "IS_ACK: " << static_cast<bool>(bytes.get()[sizeof(uint64_t)]) << "|"
+                  << std::endl;
 
         return std::move(bytes);
     }
 
-    std::shared_ptr<char[]> get_payload() {
-        return this->payload;
-    }
+    std::shared_ptr<char[]> get_payload() { return this->payload; }
 
-    uint64_t get_id() {
-        return this->id;
-    }
+    uint64_t get_id() { return this->id; }
 };

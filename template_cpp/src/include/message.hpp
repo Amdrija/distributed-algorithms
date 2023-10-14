@@ -3,24 +3,41 @@
 #include "transport_message.hpp"
 #include <atomic>
 
+enum MessageType { Empty, String, Ack };
+
 class Message {
 private:
     static std::atomic_uint64_t next_id;
 
 protected:
-    Message();
+    uint64_t id;
+    MessageType type;
+    Message(const MessageType);
+    Message(const uint64_t id, const MessageType);
 
 public:
-    const uint64_t id;
     virtual std::shared_ptr<char[]> serialize(uint64_t &length) = 0;
+
+    uint64_t get_id();
+
+    MessageType get_type();
 };
 
 class EmptyMessage : public Message {
-    virtual std::shared_ptr<char[]> serialize(uint64_t &length) {
-        length = 0;
-        std::shared_ptr<char[]> p(new char[length]);
+public:
+    EmptyMessage() : Message(MessageType::Empty) {}
 
-        return p;
+    EmptyMessage(const uint64_t id, std::shared_ptr<char[]> payload, const uint64_t length)
+        : Message(id, MessageType::Empty) {
+        // we can ignore the payload as this message only contains it's type.
+    }
+
+    virtual std::shared_ptr<char[]> serialize(uint64_t &length) {
+        length = sizeof(MessageType);
+        std::shared_ptr<char[]> payload(new char[length]);
+        std::memcpy(payload.get(), &this->type, length);
+
+        return payload;
     }
 };
 
@@ -29,13 +46,24 @@ private:
     std::string message;
 
 public:
-    StringMessage(std::string message) : Message(), message(message) {}
+    StringMessage(const std::string message) : Message(MessageType::String), message(message) {}
+
+    StringMessage(const uint64_t id, std::shared_ptr<char[]> payload, const uint64_t length)
+        : Message(id, MessageType::String) {
+        // first we skip the type, only copy the payload;
+        this->message =
+            std::string(payload.get() + sizeof(MessageType), length - sizeof(MessageType));
+    }
 
     virtual std::shared_ptr<char[]> serialize(uint64_t &length) {
-        length = this->message.length();
-        std::shared_ptr<char[]> p(new char[length]);
-        std::memcpy(p.get(), message.c_str(), length);
+        length = this->message.length() + sizeof(MessageType);
+        std::shared_ptr<char[]> payload(new char[length]);
+        std::memcpy(payload.get(), &this->type, sizeof(MessageType));
+        std::memcpy(payload.get() + sizeof(MessageType), message.c_str(),
+                    length - sizeof(MessageType));
 
-        return p;
+        return payload;
     }
+
+    std::string get_message() { return this->message; }
 };
