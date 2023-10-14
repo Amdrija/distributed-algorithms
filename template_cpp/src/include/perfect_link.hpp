@@ -43,16 +43,14 @@ public:
         return std::thread([this]() {
             std::cout << "Andrija7" << std::endl;
             while (this->continue_sending) {
-                if (!this->q.is_empty()) {
-                    auto first = this->q.dequeue();
-                    if (first.has_value()) {
-                        TransportMessage m = first.value();
-                        bool isacked = this->acked_messages.is_acked(m);
-                        std::cout << "Andrija9: " << m.get_id() << isacked << std::endl;
-                        if (!this->acked_messages.is_acked(m)) {
-                            this->link.send(m);
-                            this->q.push(m);
-                        }
+                auto first = this->q.dequeue();
+                if (first.has_value()) {
+                    TransportMessage m = first.value();
+                    bool isacked = this->acked_messages.is_acked(m);
+                    std::cout << "Andrija9: " << m.get_id() << isacked << std::endl;
+                    if (!this->acked_messages.is_acked(m)) {
+                        this->link.send(m);
+                        this->q.push(m);
                     }
                 }
             }

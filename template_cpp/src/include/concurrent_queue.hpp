@@ -27,7 +27,9 @@ public:
     std::optional<T> dequeue() {
         lock.lock();
         std::optional<T> item = q.empty() ? std::nullopt : std::make_optional<T>(q.front());
-        q.pop();
+        if (item.has_value()) {
+            q.pop();
+        }
         lock.unlock();
 
         return item;
