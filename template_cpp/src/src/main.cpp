@@ -10,7 +10,9 @@
 #include <fstream>
 #include <signal.h>
 
+std::unique_ptr<PerfectLink> perfect_link;
 std::shared_ptr<std::ofstream> output_file(new std::ofstream);
+std::thread sending_thread, receiving_thread;
 
 static void stop(int) {
     // reset signal handlers to default
@@ -18,6 +20,7 @@ static void stop(int) {
     signal(SIGINT, SIG_DFL);
 
     // immediately stop network packet processing
+    perfect_link.get()->shut_down();
     std::cout << "Immediately stopping network packet processing.\n";
 
     // write/flush output file if necessary
@@ -97,25 +100,24 @@ int main(int argc, char **argv) {
               << " messages: " << config.get_message_count() << std::endl;
     auto receiver_id = config.get_receiver_id();
 
-    auto link = PerfectLink(host_lookup.get_address_by_host_id(parser.id()), host_lookup);
+    perfect_link = std::unique_ptr<PerfectLink>(
+        new PerfectLink(host_lookup.get_address_by_host_id(parser.id()), host_lookup, output_file));
 
     std::cout << "Broadcasting and delivering messages...\n\n";
-    std::thread t, t3;
     if (config.get_receiver_id() == parser.id()) {
-        std::cout << "Started receiving on: " << link.get_address().to_string() << std::endl;
-        t = link.start_receiving([host_lookup, receiver_id](TransportMessage message) {
-            *output_file.get() << "d " << host_lookup.get_host_id_by_ip(message.address) << " "
-                               << message.get_id() << std::endl;
-        });
+        receiving_thread = perfect_link.get()->start_receiving(
+            [host_lookup, receiver_id](TransportMessage message) {
+                std::cout << "d " << host_lookup.get_host_id_by_ip(message.address) << " "
+                          << message.get_id() << std::endl;
+            });
     } else {
         Address receiver_address = host_lookup.get_address_by_host_id(config.get_receiver_id());
         for (uint64_t i = 0; i < config.get_message_count(); i++) {
             auto m = EmptyMessage();
-            *output_file.get() << "b " << m.get_id() << std::endl;
-            link.send(receiver_address, m);
+            perfect_link.get()->send(receiver_address, m);
         }
-        t = link.start_sending();
-        t3 = link.start_receiving(
+        sending_thread = perfect_link.get()->start_sending();
+        receiving_thread = perfect_link.get()->start_receiving(
             [](TransportMessage m) { std::cout << "Received ack: " << m.get_id() << std::endl; });
     }
 
@@ -125,8 +127,8 @@ int main(int argc, char **argv) {
         std::this_thread::sleep_for(std::chrono::hours(1));
     }
 
-    t3.join();
-    t.join();
+    sending_thread.join();
+    receiving_thread.join();
 
     // output_file.get()->flush();
     // output_file.get()->close();

@@ -56,7 +56,6 @@ public:
 
 private:
     unsigned int convert_ipv4_to_unsigned_int(const std::string &ipv4) const {
-        std::cout << "|" << ipv4 << "|" << std::endl;
         if (ipv4.compare("localhost")) {
             std::cout << "convert" << std::endl;
             return inet_addr("127.0.0.1");

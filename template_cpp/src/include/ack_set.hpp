@@ -16,22 +16,18 @@ public:
     AckSet(HostLookup host_lookup) : host_lookup(host_lookup) {}
 
     bool is_acked(TransportMessage message) {
-        std::cout << "Checking ack " << message.get_id() << std::endl;
         uint64_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
-        std::cout << "Andrija10: " << host_id << std::endl;
         this->lock.lock();
         auto iterator = this->acked_messages.find(message.get_id());
         auto set =
             iterator == this->acked_messages.cend() ? std::set<uint64_t>() : iterator->second;
         bool found = !(set.find(host_id) == set.cend());
         this->lock.unlock();
-        std::cout << "Finished checking ack " << message.get_id() << std::endl;
 
         return found;
     }
 
     void ack(TransportMessage message) {
-        std::cout << "Acking message " << message.get_id() << std::endl;
         uint64_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
 
         this->lock.lock();
@@ -45,6 +41,5 @@ public:
         }
         this->acked_messages.find(message.get_id())->second.insert(host_id);
         this->lock.unlock();
-        std::cout << "Finished acking " << message.get_id() << std::endl;
     }
 };
