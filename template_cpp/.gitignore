@@ -5,6 +5,7 @@
 
 bin/da_proc
 target/
+*.zip
 
 ### C ###
 # Prerequisites
