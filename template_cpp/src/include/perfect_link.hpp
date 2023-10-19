@@ -8,6 +8,7 @@
 #include "fair_loss_link.hpp"
 #include "host_lookup.hpp"
 #include "message.hpp"
+#include "output_file.hpp"
 #include <fstream>
 #include <set>
 #include <string>
@@ -22,12 +23,12 @@ private:
     AckSet acked_messages;
     DeliverySet delivered_messages;
     std::set<uint64_t> sent_messages;
-    std::shared_ptr<std::ofstream> output_file;
+    std::shared_ptr<OutputFile> output_file;
     // !Check if writing of send should be when we actually do a UDP send, or when we trigger the
     // !PerfectLink send command.
 
 public:
-    PerfectLink(Address address, HostLookup host_lookup, std::shared_ptr<std::ofstream> output_file)
+    PerfectLink(Address address, HostLookup host_lookup, std::shared_ptr<OutputFile> output_file)
         : link(address), host_lookup(host_lookup), acked_messages(host_lookup),
           delivered_messages(host_lookup), output_file(output_file) {
         std::cout << "Initialized Perfect link on address: " << address.to_string() << std::endl;
@@ -59,7 +60,7 @@ public:
                     TransportMessage m = first.value();
 
                     if (this->sent_messages.find(m.get_id()) == this->sent_messages.cend()) {
-                        *this->output_file.get() << "b " << m.get_id() << std::endl;
+                        this->output_file.get()->write("b " + std::to_string(m.get_id()) + "\n");
                     }
 
                     if (!this->acked_messages.is_acked(m)) {
@@ -96,9 +97,10 @@ public:
                                                      std::shared_ptr<char[]>(new char[0]), 0,
                                                      true));
                     // std::cout << "Delivering the message: " << message.get_id() << std::endl;
-                    *this->output_file.get()
-                        << "d " << host_lookup.get_host_id_by_ip(message.address) << " "
-                        << message.get_id() << std::endl;
+
+                    this->output_file.get()->write(
+                        "d " + std::to_string(host_lookup.get_host_id_by_ip(message.address)) +
+                        " " + std::to_string(message.get_id()) + "\n");
                     handler(message);
                 }
             });

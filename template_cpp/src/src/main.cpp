@@ -5,13 +5,14 @@
 #include "hello.h"
 #include "host_lookup.hpp"
 #include "network_config.hpp"
+#include "output_file.hpp"
 #include "parser.hpp"
 #include "perfect_link.hpp"
 #include <fstream>
 #include <signal.h>
 
 std::unique_ptr<PerfectLink> perfect_link;
-std::shared_ptr<std::ofstream> output_file(new std::ofstream);
+std::shared_ptr<OutputFile> output_file;
 std::thread sending_thread, receiving_thread;
 
 static void stop(int) {
@@ -71,7 +72,7 @@ int main(int argc, char **argv) {
     std::cout << "===============\n";
     std::cout << parser.outputPath() << "\n\n";
 
-    output_file.get()->open(parser.outputPath(), std::ofstream::out);
+    output_file = std::shared_ptr<OutputFile>(new OutputFile(parser.outputPath()));
 
     if (!output_file.get()) {
         std::cout << "Failed to open the file: " << parser.outputPath() << std::endl;
