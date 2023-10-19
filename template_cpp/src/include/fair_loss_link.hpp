@@ -22,9 +22,7 @@ private:
 public:
     const Address address;
     FairLossLink(Address address) : address(address) {
-        std::cout << "Initializing FairLoss link on address: " << address.to_string() << std::endl;
         this->socket_fd = create_socket();
-
         std::cout << "Initialized FairLoss link on address: " << address.to_string() << std::endl;
     }
 
@@ -35,8 +33,9 @@ public:
         std::unique_ptr<char[]> payload = message.serialize(serialized_length);
         sendto(this->socket_fd, payload.get(), serialized_length, 0,
                reinterpret_cast<sockaddr *>(&address), sizeof(address));
-        std::cout << "Sent message: " << message.get_id() << " to " << message.address.to_string()
-                  << std::endl;
+        // std::cout << "Sent message: " << message.get_id() << " to " <<
+        // message.address.to_string()
+        //           << std::endl;
     }
 
     void start_receiving(std::function<void(TransportMessage)> handler) {

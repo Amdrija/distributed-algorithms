@@ -34,7 +34,8 @@ public:
     }
 
     void send(Address address, Message &message) {
-        std::cout << "Triggered Perfect link send on address: " << address.to_string() << std::endl;
+        // std::cout << "Triggered Perfect link send on address: " << address.to_string() <<
+        // std::endl;
 
         uint64_t length = 0;
         auto payload = message.serialize(length);
@@ -80,21 +81,21 @@ public:
         return std::thread([this, handler]() {
             this->link.start_receiving([this, handler](TransportMessage message) {
                 if (message.is_ack) {
-                    std::cout << "Received ack for: " << message.get_id()
-                              << "from: " << message.address.to_string() << std::endl;
+                    // std::cout << "Received ack for: " << message.get_id()
+                    //           << "from: " << message.address.to_string() << std::endl;
                     this->acked_messages.ack(message);
 
                     return;
                 }
 
-                std::cout << "Received message: " << message.get_id()
-                          << " from: " << message.address.to_string() << std::endl;
+                // std::cout << "Received message: " << message.get_id()
+                //           << " from: " << message.address.to_string() << std::endl;
                 if (!this->delivered_messages.is_delivered(message)) {
                     this->delivered_messages.deliver(message);
                     this->link.send(TransportMessage(message.address, message.get_id(),
                                                      std::shared_ptr<char[]>(new char[0]), 0,
                                                      true));
-                    std::cout << "Delivering the message: " << message.get_id() << std::endl;
+                    // std::cout << "Delivering the message: " << message.get_id() << std::endl;
                     *this->output_file.get()
                         << "d " << host_lookup.get_host_id_by_ip(message.address) << " "
                         << message.get_id() << std::endl;

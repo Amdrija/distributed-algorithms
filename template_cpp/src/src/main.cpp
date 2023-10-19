@@ -55,7 +55,6 @@ int main(int argc, char **argv) {
 
     std::cout << "List of resolved hosts is:\n";
     std::cout << "==========================\n";
-    // TODO: Convert to a map for faster reads
     auto hosts = parser.hosts();
     for (auto &host : hosts) {
         std::cout << host.id << "\n";
@@ -78,20 +77,6 @@ int main(int argc, char **argv) {
         std::cout << "Failed to open the file: " << parser.outputPath() << std::endl;
     }
 
-    // Address a("127.0.0.1", 11005);
-    // TransportMessage tm(a, 13, std::shared_ptr<char[]>(new char[0]), 0, false);
-    // TransportMessage tm_ack(a, 14, std::shared_ptr<char[]>(new char[0]), 0, false);
-    // uint64_t length_tm;
-    // uint64_t length_ack;
-    // auto payload_tm = tm.serialize(length_tm);
-    // auto tm_de = TransportMessage(a, payload_tm.get(), length_tm);
-    // std::cout << "Deserialize " << tm_de.get_id() << " " << tm_de.is_ack << std::endl;
-    // auto payload_ack = tm_ack.serialize(length_ack);
-    // auto tm_ack_de = TransportMessage(a, payload_ack.get(), length_ack);
-    // std::cout << "Deserialize " << tm_ack_de.get_id() << " " << tm_ack_de.is_ack << std::endl;
-
-    // return 0;
-
     std::cout << "Path to config:\n";
     std::cout << "===============\n";
     std::cout << parser.configPath() << "\n\n";
@@ -107,8 +92,8 @@ int main(int argc, char **argv) {
     if (config.get_receiver_id() == parser.id()) {
         receiving_thread = perfect_link.get()->start_receiving(
             [host_lookup, receiver_id](TransportMessage message) {
-                std::cout << "d " << host_lookup.get_host_id_by_ip(message.address) << " "
-                          << message.get_id() << std::endl;
+                // std::cout << "d " << host_lookup.get_host_id_by_ip(message.address) << " "
+                //           << message.get_id() << std::endl;
             });
     } else {
         Address receiver_address = host_lookup.get_address_by_host_id(config.get_receiver_id());
@@ -117,8 +102,9 @@ int main(int argc, char **argv) {
             perfect_link.get()->send(receiver_address, m);
         }
         sending_thread = perfect_link.get()->start_sending();
-        receiving_thread = perfect_link.get()->start_receiving(
-            [](TransportMessage m) { std::cout << "Received ack: " << m.get_id() << std::endl; });
+        receiving_thread = perfect_link.get()->start_receiving([](TransportMessage m) {
+            // std::cout << "Received ack: " << m.get_id() << std::endl;
+        });
     }
 
     // After a process finishes broadcasting,
@@ -129,9 +115,6 @@ int main(int argc, char **argv) {
 
     sending_thread.join();
     receiving_thread.join();
-
-    // output_file.get()->flush();
-    // output_file.get()->close();
 
     return 0;
 }
