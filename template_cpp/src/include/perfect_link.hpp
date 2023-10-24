@@ -59,12 +59,15 @@ public:
 
         return std::thread([this]()
                            {
-            while (this->continue_sending) {
+            while (true) {
                 auto first = this->q.dequeue();
                 if (first.has_value()) {
                     TransportMessage m = first.value();
 
                     if (!this->acked_messages.is_acked(m)) {
+                        if (!this->continue_sending) {
+                            break;
+                        }
                         this->link.send(m);
                         this->q.push(m);
                     }
