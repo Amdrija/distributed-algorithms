@@ -6,16 +6,18 @@
 #include <mutex>
 #include <set>
 
-class AckSet {
+class AckSet
+{
 private:
     std::mutex lock;
-    std::map<uint64_t, std::set<uint64_t>> acked_messages;
+    std::map<uint32_t, std::set<uint64_t>> acked_messages;
     HostLookup host_lookup;
 
 public:
     AckSet(HostLookup host_lookup) : host_lookup(host_lookup) {}
 
-    bool is_acked(TransportMessage message) {
+    bool is_acked(TransportMessage message)
+    {
         uint64_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
         this->lock.lock();
         auto iterator = this->acked_messages.find(message.get_id());
@@ -27,11 +29,13 @@ public:
         return found;
     }
 
-    void ack(TransportMessage message) {
+    void ack(TransportMessage message)
+    {
         uint64_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
 
         this->lock.lock();
-        if (this->acked_messages.find(message.get_id()) == this->acked_messages.cend()) {
+        if (this->acked_messages.find(message.get_id()) == this->acked_messages.cend())
+        {
             std::set<uint64_t> set;
             set.insert(host_id);
             this->acked_messages.emplace(message.get_id(), set);

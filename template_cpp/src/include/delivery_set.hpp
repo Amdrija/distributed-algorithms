@@ -6,15 +6,17 @@
 #include <mutex>
 #include <set>
 
-class DeliverySet {
+class DeliverySet
+{
 private:
-    std::map<uint64_t, std::set<uint64_t>> delivered_messages;
+    std::map<uint32_t, std::set<uint64_t>> delivered_messages;
     HostLookup host_lookup;
 
 public:
     DeliverySet(HostLookup host_lookup) : host_lookup(host_lookup) {}
 
-    bool is_delivered(TransportMessage message) {
+    bool is_delivered(TransportMessage message)
+    {
         uint64_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
         auto iterator = this->delivered_messages.find(message.get_id());
         auto set =
@@ -24,9 +26,11 @@ public:
         return found;
     }
 
-    void deliver(TransportMessage message) {
+    void deliver(TransportMessage message)
+    {
         uint64_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
-        if (this->delivered_messages.find(message.get_id()) == this->delivered_messages.cend()) {
+        if (this->delivered_messages.find(message.get_id()) == this->delivered_messages.cend())
+        {
             std::set<uint64_t> set;
             set.insert(host_id);
             this->delivered_messages.emplace(message.get_id(), set);
