@@ -74,6 +74,6 @@
         "variant": "cpp",
         "codecvt": "cpp"
     },
-    "cmake.sourceDirectory": "/home/andrija/Documents/EPFL/distributed-algorithms/CS451-2023-project/template_cpp/src",
+    "cmake.sourceDirectory": "/home/andrija/Documents/EPFL/distributed_algorithms/distributed-algorithms/template_cpp/src",
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

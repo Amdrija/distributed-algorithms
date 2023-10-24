@@ -18,9 +18,10 @@ RUN apt-get -y install file unzip zip xz-utils git \
 # RUN ln -s /usr/local/apache-maven-3.6.3/bin/mvn /usr/local/bin
 
 # COPY template_java /root/template_java
+RUN apt-get -y install iproute2 nano
 WORKDIR /root/template_cpp
 COPY example ./example
 COPY tools ./tools
-RUN mkdir run_logs
+RUN mkdir logs
 COPY template_cpp /root/template_cpp
 RUN ./build.sh
