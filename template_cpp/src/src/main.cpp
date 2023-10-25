@@ -10,6 +10,7 @@
 #include "perfect_link.hpp"
 #include <fstream>
 #include <signal.h>
+#include "interval_set.hpp"
 
 std::unique_ptr<PerfectLink> perfect_link;
 std::shared_ptr<OutputFile> output_file;
@@ -43,6 +44,31 @@ int main(int argc, char **argv)
     // `true` means that a config file is required.
     // Call with `false` if no config file is necessary.
     bool requireConfig = true;
+    IntervalSet iset;
+    // std::cout << iset.insert(1) << std::endl;
+    // std::cout << iset.insert(2) << std::endl;
+    // std::cout << iset.insert(5) << std::endl;
+    // std::cout << iset.insert(6) << std::endl;
+    // std::cout << iset.insert(7) << std::endl;
+    // std::cout << iset.insert(11) << std::endl;
+    // std::cout << iset.insert(12) << std::endl;
+    // std::cout << iset.to_string() << std::endl;
+    // std::cout << iset.insert(3) << std::endl;
+    // std::cout << iset.insert(5) << std::endl;
+    // std::cout << iset.insert(6) << std::endl;
+    // std::cout << iset.insert(7) << std::endl;
+    // std::cout << iset.insert(4) << std::endl;
+    // std::cout << iset.to_string() << std::endl;
+    // std::cout << iset.insert(9) << std::endl;
+    // std::cout << iset.to_string() << std::endl;
+    // std::cout << iset.insert(8) << std::endl;
+    // std::cout << iset.insert(10) << std::endl;
+    // std::cout << iset.to_string() << std::endl;
+    // std::cout << iset.insert(10) << std::endl;
+    // std::cout << iset.insert(0) << std::endl;
+    // std::cout << iset.insert(12) << std::endl;
+
+    // return 0;
 
     Parser parser(argc, argv);
     parser.parse();
@@ -105,17 +131,17 @@ int main(int argc, char **argv)
     }
     else
     {
+        sending_thread = perfect_link.get()->start_sending();
+        receiving_thread = perfect_link.get()->start_receiving([](TransportMessage m)
+                                                               {
+                                                                   // std::cout << "Received ack: " << m.get_id() << std::endl;
+                                                               });
         Address receiver_address = host_lookup.get_address_by_host_id(static_cast<uint8_t>(config.get_receiver_id()));
         for (uint64_t i = 0; i < config.get_message_count(); i++)
         {
             auto m = EmptyMessage();
             perfect_link.get()->send(receiver_address, m);
         }
-        sending_thread = perfect_link.get()->start_sending();
-        receiving_thread = perfect_link.get()->start_receiving([](TransportMessage m)
-                                                               {
-                                                                   // std::cout << "Received ack: " << m.get_id() << std::endl;
-                                                               });
     }
 
     // After a process finishes broadcasting,
