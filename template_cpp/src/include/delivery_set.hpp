@@ -5,37 +5,27 @@
 #include <unordered_map>
 #include <mutex>
 #include <unordered_set>
+#include "interval_set.hpp"
 
 class DeliverySet
 {
 private:
-    std::unordered_map<uint32_t, std::unordered_set<uint8_t>> delivered_messages;
+    std::unique_ptr<IntervalSet[]> delivered_messages;
     HostLookup host_lookup;
 
 public:
-    DeliverySet(HostLookup host_lookup) : host_lookup(host_lookup) {}
+    DeliverySet(HostLookup host_lookup) : delivered_messages(std::unique_ptr<IntervalSet[]>(new IntervalSet[host_lookup.get_host_count()])), host_lookup(host_lookup) {}
 
     bool is_delivered(TransportMessage message)
     {
-        uint8_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
-        auto iterator = this->delivered_messages.find(message.get_id());
-        auto set =
-            iterator == this->delivered_messages.cend() ? std::unordered_set<uint8_t>() : iterator->second;
-        bool found = !(set.find(host_id) == set.cend());
+        uint8_t host_id = static_cast<uint8_t>(this->host_lookup.get_host_id_by_ip(message.address) - 1);
 
-        return found;
+        return this->delivered_messages[host_id].contains(message.get_id());
     }
 
     void deliver(TransportMessage message)
     {
-        uint8_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
-        if (this->delivered_messages.find(message.get_id()) == this->delivered_messages.cend())
-        {
-            std::unordered_set<uint8_t> set;
-            set.insert(host_id);
-            this->delivered_messages.emplace(message.get_id(), set);
-            return;
-        }
-        this->delivered_messages.find(message.get_id())->second.insert(host_id);
+        uint8_t host_id = static_cast<uint8_t>(this->host_lookup.get_host_id_by_ip(message.address) - 1);
+        this->delivered_messages[host_id].insert(message.get_id());
     }
 };

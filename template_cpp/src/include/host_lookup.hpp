@@ -73,6 +73,11 @@ public:
         return hosts;
     }
 
+    uint8_t get_host_count()
+    {
+        return static_cast<uint8_t>(this->host_to_address.size());
+    }
+
 private:
     unsigned int convert_ipv4_to_unsigned_int(const std::string &ipv4) const
     {

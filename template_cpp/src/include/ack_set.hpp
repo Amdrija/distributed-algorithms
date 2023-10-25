@@ -5,25 +5,23 @@
 #include <unordered_map>
 #include <mutex>
 #include <unordered_set>
+#include "interval_set.hpp"
 
 class AckSet
 {
 private:
     std::mutex lock;
-    std::unordered_map<uint32_t, std::unordered_set<uint8_t>> acked_messages;
+    std::unique_ptr<IntervalSet[]> acked_messages;
     HostLookup host_lookup;
 
 public:
-    AckSet(HostLookup host_lookup) : host_lookup(host_lookup) {}
+    AckSet(HostLookup host_lookup) : acked_messages(std::unique_ptr<IntervalSet[]>(new IntervalSet[host_lookup.get_host_count()])), host_lookup(host_lookup) {}
 
     bool is_acked(TransportMessage message)
     {
-        uint8_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
+        uint8_t host_id = static_cast<uint8_t>(this->host_lookup.get_host_id_by_ip(message.address) - 1);
         this->lock.lock();
-        auto iterator = this->acked_messages.find(message.get_id());
-        auto set =
-            iterator == this->acked_messages.cend() ? std::unordered_set<uint8_t>() : iterator->second;
-        bool found = !(set.find(host_id) == set.cend());
+        bool found = this->acked_messages.get()[host_id].contains(message.get_id());
         this->lock.unlock();
 
         return found;
@@ -31,19 +29,10 @@ public:
 
     void ack(TransportMessage message)
     {
-        uint8_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
+        uint8_t host_id = static_cast<uint8_t>(this->host_lookup.get_host_id_by_ip(message.address) - 1);
 
         this->lock.lock();
-        if (this->acked_messages.find(message.get_id()) == this->acked_messages.cend())
-        {
-            std::unordered_set<uint8_t> set;
-            set.insert(host_id);
-            this->acked_messages.emplace(message.get_id(), set);
-            this->lock.unlock();
-
-            return;
-        }
-        this->acked_messages.find(message.get_id())->second.insert(host_id);
+        this->acked_messages.get()[host_id].insert(message.get_id());
         this->lock.unlock();
     }
 };

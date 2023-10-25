@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     // `true` means that a config file is required.
     // Call with `false` if no config file is necessary.
     bool requireConfig = true;
-    IntervalSet iset;
+    // IntervalSet iset;
     // std::cout << iset.insert(1) << std::endl;
     // std::cout << iset.insert(2) << std::endl;
     // std::cout << iset.insert(5) << std::endl;
@@ -64,9 +64,10 @@ int main(int argc, char **argv)
     // std::cout << iset.insert(8) << std::endl;
     // std::cout << iset.insert(10) << std::endl;
     // std::cout << iset.to_string() << std::endl;
-    // std::cout << iset.insert(10) << std::endl;
-    // std::cout << iset.insert(0) << std::endl;
-    // std::cout << iset.insert(12) << std::endl;
+    // std::cout << iset.contains(10) << std::endl;
+    // std::cout << iset.contains(0) << std::endl;
+    // std::cout << iset.contains(12) << std::endl;
+    // std::cout << iset.contains(120) << std::endl;
 
     // return 0;
 

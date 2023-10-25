@@ -74,6 +74,17 @@ public:
         return true;
     }
 
+    bool contains(uint32_t value)
+    {
+        auto current = this->intervals.begin();
+        while (current != this->intervals.cend() && value > current->end)
+        {
+            current++;
+        }
+
+        return current != this->intervals.cend() && value >= current->start;
+    }
+
     std::string to_string()
     {
         std::string result;
