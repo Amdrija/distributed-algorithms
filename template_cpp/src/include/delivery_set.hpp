@@ -2,14 +2,14 @@
 
 #include "host_lookup.hpp"
 #include "transport_message.hpp"
-#include <map>
+#include <unordered_map>
 #include <mutex>
-#include <set>
+#include <unordered_set>
 
 class DeliverySet
 {
 private:
-    std::map<uint32_t, std::set<uint8_t>> delivered_messages;
+    std::unordered_map<uint32_t, std::unordered_set<uint8_t>> delivered_messages;
     HostLookup host_lookup;
 
 public:
@@ -20,7 +20,7 @@ public:
         uint8_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
         auto iterator = this->delivered_messages.find(message.get_id());
         auto set =
-            iterator == this->delivered_messages.cend() ? std::set<uint8_t>() : iterator->second;
+            iterator == this->delivered_messages.cend() ? std::unordered_set<uint8_t>() : iterator->second;
         bool found = !(set.find(host_id) == set.cend());
 
         return found;
@@ -31,7 +31,7 @@ public:
         uint8_t host_id = this->host_lookup.get_host_id_by_ip(message.address);
         if (this->delivered_messages.find(message.get_id()) == this->delivered_messages.cend())
         {
-            std::set<uint8_t> set;
+            std::unordered_set<uint8_t> set;
             set.insert(host_id);
             this->delivered_messages.emplace(message.get_id(), set);
             return;
