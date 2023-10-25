@@ -41,7 +41,7 @@ public:
         this->output_file.get()->write("b " + std::to_string(message.get_id()) + "\n");
         uint64_t length = 0;
         auto payload = message.serialize(length);
-        q.push(TransportMessage(address, message.get_id(), payload, length));
+        q.push(TransportMessage(address, message.get_id(), std::move(payload), length));
     }
 
     void shut_down()

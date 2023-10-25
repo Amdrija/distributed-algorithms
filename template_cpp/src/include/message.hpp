@@ -22,7 +22,7 @@ protected:
     Message(const uint32_t id, const MessageType);
 
 public:
-    virtual std::shared_ptr<char[]> serialize(uint64_t &length) = 0;
+    virtual std::unique_ptr<char[]> serialize(uint64_t &length) = 0;
 
     uint32_t get_id();
 
@@ -40,10 +40,10 @@ public:
         // we can ignore the payload as this message only contains it's type.
     }
 
-    virtual std::shared_ptr<char[]> serialize(uint64_t &length)
+    virtual std::unique_ptr<char[]> serialize(uint64_t &length)
     {
         length = sizeof(MessageType);
-        std::shared_ptr<char[]> payload(new char[length]);
+        std::unique_ptr<char[]> payload(new char[length]);
         std::memcpy(payload.get(), &this->type, length);
 
         return payload;
@@ -58,7 +58,7 @@ private:
 public:
     StringMessage(const std::string message) : Message(MessageType::String), message(message) {}
 
-    StringMessage(const uint32_t id, std::shared_ptr<char[]> payload, const uint64_t length)
+    StringMessage(const uint32_t id, std::unique_ptr<char[]> payload, const uint64_t length)
         : Message(id, MessageType::String)
     {
         // first we skip the type, only copy the payload;
@@ -66,10 +66,10 @@ public:
             std::string(payload.get() + sizeof(MessageType), length - sizeof(MessageType));
     }
 
-    virtual std::shared_ptr<char[]> serialize(uint64_t &length)
+    virtual std::unique_ptr<char[]> serialize(uint64_t &length)
     {
         length = this->message.length() + sizeof(MessageType);
-        std::shared_ptr<char[]> payload(new char[length]);
+        std::unique_ptr<char[]> payload(new char[length]);
         std::memcpy(payload.get(), &this->type, sizeof(MessageType));
         std::memcpy(payload.get() + sizeof(MessageType), message.c_str(),
                     length - sizeof(MessageType));
