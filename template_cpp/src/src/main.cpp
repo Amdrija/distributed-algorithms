@@ -91,7 +91,7 @@ int main(int argc, char **argv)
     auto receiver_id = config.get_receiver_id();
 
     perfect_link = std::unique_ptr<PerfectLink>(
-        new PerfectLink(host_lookup.get_address_by_host_id(parser.id()), host_lookup, output_file));
+        new PerfectLink(host_lookup.get_address_by_host_id(static_cast<uint8_t>(parser.id())), host_lookup, output_file));
 
     std::cout << "Broadcasting and delivering messages...\n\n";
     if (config.get_receiver_id() == parser.id())
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        Address receiver_address = host_lookup.get_address_by_host_id(config.get_receiver_id());
+        Address receiver_address = host_lookup.get_address_by_host_id(static_cast<uint8_t>(config.get_receiver_id()));
         for (uint64_t i = 0; i < config.get_message_count(); i++)
         {
             auto m = EmptyMessage();

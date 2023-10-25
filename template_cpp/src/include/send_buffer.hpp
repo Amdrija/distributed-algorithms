@@ -16,9 +16,9 @@ class SendBuffer
 {
 private:
     uint64_t capacity;
-    std::unordered_map<uint64_t, uint64_t> sizes;
-    std::unordered_map<uint64_t, std::unique_ptr<char[]>> buffers;
-    std::unordered_map<uint64_t, uint8_t> message_counts;
+    std::unordered_map<uint8_t, uint64_t> sizes;
+    std::unordered_map<uint8_t, std::unique_ptr<char[]>> buffers;
+    std::unordered_map<uint8_t, uint8_t> message_counts;
     HostLookup host_lookup;
 
 public:
@@ -36,7 +36,7 @@ public:
     {
         uint64_t serialized_length = 0;
         std::unique_ptr<char[]> payload = message.serialize(serialized_length);
-        uint64_t host_id = host_lookup.get_host_id_by_ip(message.address);
+        uint8_t host_id = host_lookup.get_host_id_by_ip(message.address);
 
         if (this->message_counts[host_id] == MAX_MESSAGE_COUNT || serialized_length + this->sizes[host_id] + sizeof(serialized_length) > this->capacity)
         {

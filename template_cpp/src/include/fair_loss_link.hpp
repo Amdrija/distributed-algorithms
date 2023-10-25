@@ -41,12 +41,6 @@ public:
 
         if (serialized_length > 0)
         {
-            // for (uint64_t i = 0; i < serialized_length; i++)
-            // {
-            //     std::cout << static_cast<int>(payload.get()[i]) << " ";
-            // }
-            // std::cout << std::endl
-            //           << serialized_length << std::endl;
             sockaddr_in address = message.address.to_sockaddr();
 
             sendto(this->socket_fd, payload.get(), serialized_length, 0,

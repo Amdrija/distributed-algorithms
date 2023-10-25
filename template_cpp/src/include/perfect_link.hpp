@@ -102,7 +102,7 @@ public:
                     // std::cout << "Delivering the message: " << message.get_id() << std::endl;
 
                     this->output_file.get()->write(
-                        "d " + std::to_string(host_lookup.get_host_id_by_ip(message.address)) +
+                        "d " + std::to_string(static_cast<int>(host_lookup.get_host_id_by_ip(message.address))) +
                         " " + std::to_string(message.get_id()) + "\n");
                     handler(message);
                 } }); });
