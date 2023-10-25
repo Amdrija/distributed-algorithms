@@ -41,6 +41,10 @@ public:
         this->output_file.get()->write("b " + std::to_string(message.get_id()) + "\n");
         uint64_t length = 0;
         auto payload = message.serialize(length);
+
+        while (q.is_full())
+        {
+        }
         q.push(TransportMessage(address, message.get_id(), std::move(payload), length));
     }
 
@@ -68,7 +72,7 @@ public:
                             break;
                         }
                         this->link.send(m);
-                        this->q.push(m);
+                        q.push(m);
                     }
                 }
             }

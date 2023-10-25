@@ -4,19 +4,33 @@
 #include <optional>
 #include <queue>
 
-template <typename T> class ConcurrentQueue {
+template <typename T>
+class ConcurrentQueue
+{
 private:
     std::queue<T> q;
     std::mutex lock;
+    const uint32_t capacity = 20000;
 
 public:
-    void push(T item) {
+    void push(T item)
+    {
         lock.lock();
         q.push(std::move(item));
         lock.unlock();
     }
 
-    bool is_empty() {
+    bool is_full()
+    {
+        lock.lock();
+        bool full = this->q.size() >= capacity;
+        lock.unlock();
+
+        return full;
+    }
+
+    bool is_empty()
+    {
         lock.lock();
         bool empty = q.empty();
         lock.unlock();
@@ -24,10 +38,12 @@ public:
         return empty;
     }
 
-    std::optional<T> dequeue() {
+    std::optional<T> dequeue()
+    {
         lock.lock();
         std::optional<T> item = q.empty() ? std::nullopt : std::make_optional<T>(q.front());
-        if (item.has_value()) {
+        if (item.has_value())
+        {
             q.pop();
         }
         lock.unlock();
