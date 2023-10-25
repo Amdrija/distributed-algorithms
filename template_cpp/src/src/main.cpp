@@ -15,7 +15,8 @@ std::unique_ptr<PerfectLink> perfect_link;
 std::shared_ptr<OutputFile> output_file;
 std::thread sending_thread, receiving_thread;
 
-static void stop(int) {
+static void stop(int)
+{
     // reset signal handlers to default
     signal(SIGTERM, SIG_DFL);
     signal(SIGINT, SIG_DFL);
@@ -34,7 +35,8 @@ static void stop(int) {
     exit(0);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     signal(SIGTERM, stop);
     signal(SIGINT, stop);
 
@@ -57,7 +59,8 @@ int main(int argc, char **argv) {
     std::cout << "List of resolved hosts is:\n";
     std::cout << "==========================\n";
     auto hosts = parser.hosts();
-    for (auto &host : hosts) {
+    for (auto &host : hosts)
+    {
         std::cout << host.id << "\n";
         std::cout << "Human-readable IP: " << host.ipReadable() << "\n";
         std::cout << "Machine-readable IP: " << host.ip << "\n";
@@ -74,7 +77,8 @@ int main(int argc, char **argv) {
 
     output_file = std::shared_ptr<OutputFile>(new OutputFile(parser.outputPath()));
 
-    if (!output_file.get()) {
+    if (!output_file.get())
+    {
         std::cout << "Failed to open the file: " << parser.outputPath() << std::endl;
     }
 
@@ -90,27 +94,34 @@ int main(int argc, char **argv) {
         new PerfectLink(host_lookup.get_address_by_host_id(parser.id()), host_lookup, output_file));
 
     std::cout << "Broadcasting and delivering messages...\n\n";
-    if (config.get_receiver_id() == parser.id()) {
+    if (config.get_receiver_id() == parser.id())
+    {
         receiving_thread = perfect_link.get()->start_receiving(
-            [host_lookup, receiver_id](TransportMessage message) {
+            [host_lookup, receiver_id](TransportMessage message)
+            {
                 // std::cout << "d " << host_lookup.get_host_id_by_ip(message.address) << " "
                 //           << message.get_id() << std::endl;
             });
-    } else {
+    }
+    else
+    {
         Address receiver_address = host_lookup.get_address_by_host_id(config.get_receiver_id());
-        for (uint64_t i = 0; i < config.get_message_count(); i++) {
+        for (uint64_t i = 0; i < config.get_message_count(); i++)
+        {
             auto m = EmptyMessage();
             perfect_link.get()->send(receiver_address, m);
         }
         sending_thread = perfect_link.get()->start_sending();
-        receiving_thread = perfect_link.get()->start_receiving([](TransportMessage m) {
-            // std::cout << "Received ack: " << m.get_id() << std::endl;
-        });
+        receiving_thread = perfect_link.get()->start_receiving([](TransportMessage m)
+                                                               {
+                                                                   // std::cout << "Received ack: " << m.get_id() << std::endl;
+                                                               });
     }
 
     // After a process finishes broadcasting,
     // it waits forever for the delivery of messages.
-    while (true) {
+    while (true)
+    {
         std::this_thread::sleep_for(std::chrono::hours(1));
     }
 

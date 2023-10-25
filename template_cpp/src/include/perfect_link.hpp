@@ -29,8 +29,7 @@ private:
 
 public:
     PerfectLink(Address address, HostLookup host_lookup, std::shared_ptr<OutputFile> output_file)
-        : link(address), host_lookup(host_lookup), acked_messages(host_lookup),
-          delivered_messages(host_lookup), output_file(output_file)
+        : link(address, host_lookup), host_lookup(host_lookup), acked_messages(host_lookup), delivered_messages(host_lookup), output_file(output_file)
     {
         std::cout << "Initialized Perfect link on address: " << address.to_string() << std::endl;
     }

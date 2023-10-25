@@ -4,19 +4,23 @@
 #include "string_helpers.hpp"
 #include <arpa/inet.h>
 #include <fstream>
-#include <map>
+#include <unordered_map>
+#include <vector>
 
-class HostLookup {
+class HostLookup
+{
 private:
-    std::map<uint32_t, std::map<uint16_t, uint64_t>> address_to_host;
-    std::map<uint64_t, Address> host_to_address;
+    std::unordered_map<uint32_t, std::unordered_map<uint16_t, uint64_t>> address_to_host;
+    std::unordered_map<uint64_t, Address> host_to_address;
 
 public:
-    HostLookup(std::string file_name) {
+    HostLookup(std::string file_name)
+    {
         std::string line;
         std::ifstream file(file_name);
 
-        while (getline(file, line)) {
+        while (getline(file, line))
+        {
 
             // splitted[0] is the id of the process
             // splitted[1] is the ipv4 address of the process
@@ -34,29 +38,46 @@ public:
     // In a system of n identifiers, the processes have ids from 1 to n
     // this function can therefore return 0 if it cannot find a process
     // with specified ip.
-    uint64_t get_host_id_by_ip(Address address) const {
+    uint64_t get_host_id_by_ip(Address address) const
+    {
         auto inner_map = address_to_host.find(address.ip);
-        if (inner_map == address_to_host.end()) {
+        if (inner_map == address_to_host.end())
+        {
             return 0;
         }
 
         auto id = inner_map->second.find(address.port);
-        if (id == inner_map->second.end()) {
+        if (id == inner_map->second.end())
+        {
             return 0;
         }
 
         return id->second;
     }
 
-    Address get_address_by_host_id(uint64_t id) const {
+    Address get_address_by_host_id(uint64_t id) const
+    {
         auto pair = host_to_address.find(id);
 
         return pair == host_to_address.end() ? Address(0, 0) : pair->second;
     }
 
+    std::vector<uint64_t> get_hosts()
+    {
+        std::vector<uint64_t> hosts(this->host_to_address.size());
+        for (auto pair : this->host_to_address)
+        {
+            hosts.push_back(pair.first);
+        }
+
+        return hosts;
+    }
+
 private:
-    unsigned int convert_ipv4_to_unsigned_int(const std::string &ipv4) const {
-        if (ipv4.compare("localhost")) {
+    unsigned int convert_ipv4_to_unsigned_int(const std::string &ipv4) const
+    {
+        if (ipv4.compare("localhost"))
+        {
             return inet_addr("127.0.0.1");
         }
 
