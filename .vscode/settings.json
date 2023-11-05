@@ -74,7 +74,10 @@
         "variant": "cpp",
         "codecvt": "cpp",
         "unordered_set": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "csignal": "cpp",
+        "any": "cpp",
+        "future": "cpp"
     },
     "cmake.sourceDirectory": "/home/andrija/Documents/EPFL/distributed_algorithms/distributed-algorithms/template_cpp/src",
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
