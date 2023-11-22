@@ -22,7 +22,6 @@ private:
     HostLookup host_lookup;
     AckSet acked_messages;
     DeliverySet delivered_messages;
-    std::shared_ptr<OutputFile> output_file;
     // !Check if writing of send should be when we actually do a UDP send, or
     // when we trigger the !PerfectLink send command.
 
@@ -30,8 +29,7 @@ public:
     PerfectLink(Address address, HostLookup host_lookup,
                 std::shared_ptr<OutputFile> output_file)
         : link(address, host_lookup), host_lookup(host_lookup),
-          acked_messages(host_lookup), delivered_messages(host_lookup),
-          output_file(output_file) {
+          acked_messages(host_lookup), delivered_messages(host_lookup) {
         std::cout << "Initialized Perfect link on address: "
                   << address.to_string() << std::endl;
     }
@@ -41,13 +39,10 @@ public:
         // address.to_string() << std::endl;
         uint64_t length = 0;
         auto payload = message.serialize(length);
-        TransportMessage transport_msg(address, std::move(payload), length);
-        this->output_file.get()->write(
-            "b " + std::to_string(transport_msg.get_id()) + "\n");
 
         while (q.is_full()) {
         }
-        q.push(transport_msg);
+        q.push(TransportMessage(address, std::move(payload), length));
     }
 
     void shut_down() {
@@ -87,34 +82,29 @@ public:
                   << std::endl;
 
         return std::thread([this, handler]() {
-            this->link.start_receiving([this,
-                                        handler](TransportMessage message) {
-                if (message.is_ack) {
-                    // std::cout << "Received ack for: " << message.get_id()
-                    //           << "from: " << message.address.to_string() <<
+            this->link.start_receiving(
+                [this, handler](TransportMessage message) {
+                    if (message.is_ack) {
+                        // std::cout << "Received ack for: " << message.get_id()
+                        //           << "from: " << message.address.to_string()
+                        //           << std::endl;
+                        this->acked_messages.ack(message);
+
+                        return;
+                    }
+
+                    // std::cout << "Received message: " << message.get_id()
+                    //           << " from: " << message.address.to_string() <<
                     //           std::endl;
-                    this->acked_messages.ack(message);
+                    if (!this->delivered_messages.is_delivered(message)) {
+                        this->delivered_messages.deliver(message);
+                        this->link.send(TransportMessage::create_ack(message));
+                        // std::cout << "Delivering the message: " <<
+                        // message.get_id() << std::endl;
 
-                    return;
-                }
-
-                // std::cout << "Received message: " << message.get_id()
-                //           << " from: " << message.address.to_string() <<
-                //           std::endl;
-                if (!this->delivered_messages.is_delivered(message)) {
-                    this->delivered_messages.deliver(message);
-                    this->link.send(TransportMessage::create_ack(message));
-                    // std::cout << "Delivering the message: " <<
-                    // message.get_id() << std::endl;
-
-                    this->output_file.get()->write(
-                        "d " +
-                        std::to_string(static_cast<int>(
-                            host_lookup.get_host_id_by_ip(message.address))) +
-                        " " + std::to_string(message.get_id()) + "\n");
-                    handler(message);
-                }
-            });
+                        handler(message);
+                    }
+                });
         });
     }
 

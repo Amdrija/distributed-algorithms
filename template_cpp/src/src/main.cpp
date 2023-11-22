@@ -76,7 +76,8 @@ int main(int argc, char **argv) {
     std::cout << std::endl;
 
     std::cout << "My PID: " << getpid() << "\n";
-    std::cout << "From a new terminal type `kill -SIGINT " << getpid() << "` or `kill -SIGTERM " << getpid()
+    std::cout << "From a new terminal type `kill -SIGINT " << getpid()
+              << "` or `kill -SIGTERM " << getpid()
               << "` to stop processing packets\n\n";
 
     std::cout << "My ID: " << parser.id() << "\n\n";
@@ -99,39 +100,54 @@ int main(int argc, char **argv) {
     std::cout << "===============\n";
     std::cout << parser.outputPath() << "\n\n";
 
-    output_file = std::shared_ptr<OutputFile>(new OutputFile(parser.outputPath()));
+    output_file =
+        std::shared_ptr<OutputFile>(new OutputFile(parser.outputPath()));
 
     if (!output_file.get()) {
-        std::cout << "Failed to open the file: " << parser.outputPath() << std::endl;
+        std::cout << "Failed to open the file: " << parser.outputPath()
+                  << std::endl;
     }
 
     std::cout << "Path to config:\n";
     std::cout << "===============\n";
     std::cout << parser.configPath() << "\n\n";
     NetworkConfig config(parser.configPath());
-    std::cout << "Receiver id: " << config.get_receiver_id() << " messages: " << config.get_message_count()
-              << std::endl;
+    std::cout << "Receiver id: " << config.get_receiver_id()
+              << " messages: " << config.get_message_count() << std::endl;
     auto receiver_id = config.get_receiver_id();
 
     perfect_link = std::unique_ptr<PerfectLink>(new PerfectLink(
-        host_lookup.get_address_by_host_id(static_cast<uint8_t>(parser.id())), host_lookup, output_file));
+        host_lookup.get_address_by_host_id(static_cast<uint8_t>(parser.id())),
+        host_lookup, output_file));
 
     std::cout << "Broadcasting and delivering messages...\n\n";
     if (config.get_receiver_id() == parser.id()) {
-        receiving_thread = perfect_link.get()->start_receiving([host_lookup, receiver_id](TransportMessage message) {
-            // std::cout << "d " << host_lookup.get_host_id_by_ip(message.address) << " "
-            //           << message.get_id() << std::endl;
-        });
+        receiving_thread = perfect_link.get()->start_receiving(
+            [host_lookup, receiver_id](TransportMessage message) {
+                // std::cout << "d " <<
+                // host_lookup.get_host_id_by_ip(message.address) << " "
+                //           << message.get_id() << std::endl;
+                auto sm = StringMessage(message.get_payload(), message.length);
+                output_file.get()->write(
+                    "d " +
+                    std::to_string(static_cast<int>(
+                        host_lookup.get_host_id_by_ip(message.address))) +
+                    " " + sm.get_message() + "\n");
+            });
 
         receiving_thread.detach();
     } else {
         sending_thread = perfect_link.get()->start_sending();
-        receiving_thread = perfect_link.get()->start_receiving([](TransportMessage m) {
-            // std::cout << "Received ack: " << m.get_id() << std::endl;
-        });
-        Address receiver_address = host_lookup.get_address_by_host_id(static_cast<uint8_t>(config.get_receiver_id()));
+        receiving_thread =
+            perfect_link.get()->start_receiving([](TransportMessage m) {
+                // std::cout << "Received ack: " << m.get_id() << std::endl;
+            });
+        Address receiver_address = host_lookup.get_address_by_host_id(
+            static_cast<uint8_t>(config.get_receiver_id()));
         for (uint64_t i = 0; i < config.get_message_count(); i++) {
-            auto m = EmptyMessage();
+            auto m =
+                StringMessage(std::string("Message: ") + std::to_string(i + 1));
+            output_file.get()->write("b " + std::to_string(i + 1) + "\n");
             perfect_link.get()->send(receiver_address, m);
         }
 

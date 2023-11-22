@@ -41,7 +41,7 @@ public:
     StringMessage(const std::string message)
         : Message(MessageType::String), message(message) {}
 
-    StringMessage(std::unique_ptr<char[]> payload, const uint64_t length)
+    StringMessage(std::shared_ptr<char[]> payload, const uint64_t length)
         : Message(MessageType::String) {
         // first we skip the type, only copy the payload;
         this->message = std::string(payload.get() + sizeof(MessageType),
