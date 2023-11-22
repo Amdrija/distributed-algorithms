@@ -46,8 +46,7 @@ public:
 
         while (q.is_full()) {
         }
-        q.push(TransportMessage(address, message.get_id(), std::move(payload),
-                                length));
+        q.push(TransportMessage(address, std::move(payload), length));
     }
 
     void shut_down() {
@@ -103,9 +102,7 @@ public:
                 //           std::endl;
                 if (!this->delivered_messages.is_delivered(message)) {
                     this->delivered_messages.deliver(message);
-                    this->link.send(TransportMessage(
-                        message.address, message.get_id(),
-                        std::shared_ptr<char[]>(new char[0]), 0, true));
+                    this->link.send(TransportMessage::create_ack(message));
                     // std::cout << "Delivering the message: " <<
                     // message.get_id() << std::endl;
 
