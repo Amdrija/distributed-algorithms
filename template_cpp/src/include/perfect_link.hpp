@@ -39,14 +39,15 @@ public:
     void send(Address address, Message &message) {
         // std::cout << "Triggered Perfect link send on address: " <<
         // address.to_string() << std::endl;
-        this->output_file.get()->write("b " + std::to_string(message.get_id()) +
-                                       "\n");
         uint64_t length = 0;
         auto payload = message.serialize(length);
+        TransportMessage transport_msg(address, std::move(payload), length);
+        this->output_file.get()->write(
+            "b " + std::to_string(transport_msg.get_id()) + "\n");
 
         while (q.is_full()) {
         }
-        q.push(TransportMessage(address, std::move(payload), length));
+        q.push(transport_msg);
     }
 
     void shut_down() {
