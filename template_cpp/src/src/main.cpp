@@ -116,6 +116,20 @@ int main(int argc, char **argv) {
               << " messages: " << config.get_message_count() << std::endl;
     auto receiver_id = config.get_receiver_id();
 
+    // StringMessage s(std::string("yo mam"));
+    // BroadcastMessage a(s, 1, 1);
+    // uint64_t length;
+    // std::unique_ptr<char[]> p = a.serialize(length);
+    // BroadcastMessage a1(std::move(p), length);
+    // std::cout << "d " + std::to_string(static_cast<int>(a1.get_source())) +
+    //                  " " + std::to_string(a1.get_sequence_number());
+    // auto inner_msg = std::move(a1).get_message();
+    // std::cout
+    //     << " {" + static_cast<StringMessage
+    //     *>(inner_msg.get())->get_message() +
+    //            "}"
+    //     << std::endl;
+    // return 0;
     perfect_link = std::unique_ptr<PerfectLink>(new PerfectLink(
         host_lookup.get_address_by_host_id(static_cast<uint8_t>(parser.id())),
         host_lookup, output_file));
@@ -127,12 +141,17 @@ int main(int argc, char **argv) {
                 // std::cout << "d " <<
                 // host_lookup.get_host_id_by_ip(message.address) << " "
                 //           << message.get_id() << std::endl;
-                auto sm = StringMessage(message.get_payload(), message.length);
+                auto bm =
+                    BroadcastMessage(message.get_payload(), message.length);
                 output_file.get()->write(
-                    "d " +
-                    std::to_string(static_cast<int>(
-                        host_lookup.get_host_id_by_ip(message.address))) +
-                    " " + sm.get_message() + "\n");
+                    "d " + std::to_string(static_cast<int>(bm.get_source())) +
+                    " " + std::to_string(bm.get_sequence_number()));
+                auto inner_msg = std::move(bm).get_message();
+                output_file.get()->write(
+                    " {" +
+                    static_cast<StringMessage *>(inner_msg.get())
+                        ->get_message() +
+                    "}\n");
             });
 
         receiving_thread.detach();
@@ -147,8 +166,10 @@ int main(int argc, char **argv) {
         for (uint64_t i = 0; i < config.get_message_count(); i++) {
             auto m =
                 StringMessage(std::string("Message: ") + std::to_string(i + 1));
+            auto bm = BroadcastMessage(m, static_cast<uint32_t>(i + 1),
+                                       static_cast<uint8_t>(parser.id()));
             output_file.get()->write("b " + std::to_string(i + 1) + "\n");
-            perfect_link.get()->send(receiver_address, m);
+            perfect_link.get()->send(receiver_address, bm);
         }
 
         sending_thread.detach();

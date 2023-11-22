@@ -42,6 +42,8 @@ public:
 
         while (q.is_full()) {
         }
+
+        // TODO: How does this even work?
         q.push(TransportMessage(address, std::move(payload), length));
     }
 
