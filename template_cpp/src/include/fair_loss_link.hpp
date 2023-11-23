@@ -65,6 +65,7 @@ public:
             std::vector<TransportMessage> messages =
                 this->send_buffer.deserialize(Address(source), buffer,
                                               received_length);
+
             for (auto m : messages) {
                 handler(m);
             }

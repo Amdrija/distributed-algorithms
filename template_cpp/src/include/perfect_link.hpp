@@ -51,16 +51,15 @@ public:
 
     void broadcast(Message &message) {
         uint64_t length = 0;
-        auto payload = message.serialize(length);
-
-        while (q.is_full()) {
-        }
+        std::shared_ptr payload = message.serialize(length);
 
         TransportMessage tm =
-            TransportMessage(this->link.address, std::move(payload), length);
+            TransportMessage(this->link.address, payload, length);
         for (auto host : this->host_lookup.get_hosts()) {
             if (host != this->host_id) {
                 auto address = this->host_lookup.get_address_by_host_id(host);
+                while (q.is_full()) {
+                }
                 q.push(TransportMessage(tm, address));
             }
         }

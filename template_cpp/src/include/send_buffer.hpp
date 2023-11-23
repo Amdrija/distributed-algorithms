@@ -4,6 +4,7 @@
 #include "transport_message.hpp"
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <unordered_map>
 
@@ -19,6 +20,7 @@ private:
     std::unordered_map<uint8_t, std::unique_ptr<char[]>> buffers;
     std::unordered_map<uint8_t, uint8_t> message_counts;
     HostLookup host_lookup;
+    std::mutex lock;
 
 public:
     SendBuffer(HostLookup host_lookup, uint64_t initial_capacity)
@@ -33,10 +35,12 @@ public:
 
     std::unique_ptr<char[]> add_message(TransportMessage message,
                                         uint64_t &payload_length) {
+
         uint64_t serialized_length = 0;
         std::unique_ptr<char[]> payload = message.serialize(serialized_length);
         uint8_t host_id = host_lookup.get_host_id_by_ip(message.address);
 
+        this->lock.lock();
         if (this->message_counts[host_id] == MAX_MESSAGE_COUNT ||
             serialized_length + this->sizes[host_id] +
                     sizeof(serialized_length) >
@@ -56,6 +60,7 @@ public:
                 sizeof(serialized_length) + serialized_length;
             this->message_counts[host_id] = 1;
 
+            this->lock.unlock();
             return buffer_payload;
         }
 
@@ -67,6 +72,7 @@ public:
         this->sizes[host_id] += sizeof(serialized_length) + serialized_length;
         this->message_counts[host_id]++;
 
+        this->lock.unlock();
         payload_length = 0;
         return std::unique_ptr<char[]>(new char[0]);
     }

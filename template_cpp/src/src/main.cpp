@@ -138,25 +138,29 @@ int main(int argc, char **argv) {
     receiving_thread =
         perfect_link.get()->start_receiving([](TransportMessage message) {
             // std::cout << "Received ack: " << m.get_id() << std::endl;
-            auto bm = BroadcastMessage(message.get_payload(), message.length);
-            output_file.get()->write(
-                "d " + std::to_string(static_cast<int>(bm.get_source())) + " " +
-                std::to_string(bm.get_sequence_number()));
-            auto inner_msg = std::move(bm).get_message();
-            output_file.get()->write(
-                " {" +
-                static_cast<StringMessage *>(inner_msg.get())->get_message() +
-                "}\n");
+            output_file.get()->write("d " + message.address.to_string() + " " +
+                                     std::to_string(message.get_id()) + "\n");
+            // auto bm = BroadcastMessage(message.get_payload(),
+            // message.length); output_file.get()->write(
+            //     "d " + std::to_string(static_cast<int>(bm.get_source())) + "
+            //     " + std::to_string(bm.get_sequence_number()));
+            // auto inner_msg = std::move(bm).get_message();
+            // output_file.get()->write(
+            //     " {" +
+            //     static_cast<StringMessage *>(inner_msg.get())->get_message()
+            //     +
+            //     "}\n");
         });
     Address receiver_address = host_lookup.get_address_by_host_id(
         static_cast<uint8_t>(config.get_receiver_id()));
     for (uint64_t i = 0; i < config.get_message_count(); i++) {
+        auto em = EmptyMessage();
         auto m =
             StringMessage(std::string("Message: ") + std::to_string(i + 1));
         auto bm = BroadcastMessage(m, static_cast<uint32_t>(i + 1),
                                    static_cast<uint8_t>(parser.id()));
         // output_file.get()->write("b " + std::to_string(i + 1) + "\n");
-        perfect_link.get()->broadcast(bm);
+        perfect_link.get()->broadcast(em);
     }
 
     sending_thread.detach();
