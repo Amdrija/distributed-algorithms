@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 
+// TODO: Make thread safe
 class OutputFile {
 private:
     std::ofstream file;
@@ -14,7 +15,8 @@ private:
 
 public:
     OutputFile(const std::string file_name)
-        : file(), cache(std::unique_ptr<char[]>(new char[CACHE_CAPACITY])), cache_size(0) {
+        : file(), cache(std::unique_ptr<char[]>(new char[CACHE_CAPACITY])),
+          cache_size(0) {
         this->file.open(file_name, std::ofstream::out);
     }
 
@@ -29,7 +31,8 @@ public:
             this->cache_size = 0;
         }
 
-        std::memcpy(this->cache.get() + this->cache_size, output.c_str(), output.length());
+        std::memcpy(this->cache.get() + this->cache_size, output.c_str(),
+                    output.length());
         this->cache_size += output.length();
     }
 

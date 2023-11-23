@@ -27,8 +27,7 @@ private:
     // when we trigger the !PerfectLink send command.
 
 public:
-    PerfectLink(Address address, HostLookup host_lookup,
-                std::shared_ptr<OutputFile> output_file)
+    PerfectLink(Address address, HostLookup host_lookup)
         : link(address, host_lookup), host_lookup(host_lookup),
           acked_messages(host_lookup), delivered_messages(host_lookup),
           host_id(host_lookup.get_host_id_by_ip(address)) {
@@ -58,8 +57,8 @@ public:
         for (auto host : this->host_lookup.get_hosts()) {
             if (host != this->host_id) {
                 auto address = this->host_lookup.get_address_by_host_id(host);
-                while (q.is_full()) {
-                }
+                // while (q.is_full()) {
+                // }
                 q.push(TransportMessage(tm, address));
             }
         }

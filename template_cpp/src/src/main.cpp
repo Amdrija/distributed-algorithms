@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 
+#include "fifo_config.hpp"
 #include "hello.h"
 #include "host_lookup.hpp"
 #include "interval_set.hpp"
@@ -9,12 +10,12 @@
 #include "output_file.hpp"
 #include "parser.hpp"
 #include "perfect_link.hpp"
+#include "uniform_reliable_broadcast.hpp"
 #include <fstream>
 #include <signal.h>
 
-std::unique_ptr<PerfectLink> perfect_link;
+std::unique_ptr<UniformReliableBroadcast> broadcast;
 std::shared_ptr<OutputFile> output_file;
-std::thread sending_thread, receiving_thread;
 
 static void stop(int) {
     // reset signal handlers to default
@@ -22,7 +23,7 @@ static void stop(int) {
     signal(SIGINT, SIG_DFL);
 
     // immediately stop network packet processing
-    perfect_link.get()->shut_down();
+    broadcast.get()->shut_down();
     std::cout << "Immediately stopping network packet processing.\n";
 
     // write/flush output file if necessary
@@ -110,61 +111,32 @@ int main(int argc, char **argv) {
     std::cout << "Path to config:\n";
     std::cout << "===============\n";
     std::cout << parser.configPath() << "\n\n";
-    NetworkConfig config(parser.configPath());
-    std::cout << "Receiver id: " << config.get_receiver_id()
-              << " messages: " << config.get_message_count() << std::endl;
-    auto receiver_id = config.get_receiver_id();
+    FifoConfig config(parser.configPath());
+    std::cout << "Messages to send: " << config.get_message_count()
+              << std::endl;
 
-    // StringMessage s(std::string("yo mam"));
-    // BroadcastMessage a(s, 1, 1);
-    // uint64_t length;
-    // std::unique_ptr<char[]> p = a.serialize(length);
-    // BroadcastMessage a1(std::move(p), length);
-    // std::cout << "d " + std::to_string(static_cast<int>(a1.get_source())) +
-    //                  " " + std::to_string(a1.get_sequence_number());
-    // auto inner_msg = std::move(a1).get_message();
-    // std::cout
-    //     << " {" + static_cast<StringMessage
-    //     *>(inner_msg.get())->get_message() +
-    //            "}"
-    //     << std::endl;
-    // return 0;
-    perfect_link = std::unique_ptr<PerfectLink>(new PerfectLink(
-        host_lookup.get_address_by_host_id(static_cast<uint8_t>(parser.id())),
-        host_lookup, output_file));
+    broadcast =
+        std::unique_ptr<UniformReliableBroadcast>(new UniformReliableBroadcast(
+            static_cast<uint8_t>(parser.id()), host_lookup,
+            [](BroadcastMessage bm) {
+                output_file.get()->write(
+                    "d " + std::to_string(static_cast<int>(bm.get_source())) +
+                    " " + std::to_string(bm.get_sequence_number()));
+                auto inner_msg = std::move(bm).get_message();
+                output_file.get()->write(
+                    " {" +
+                    static_cast<StringMessage *>(inner_msg.get())
+                        ->get_message() +
+                    "}\n");
+            }));
 
-    std::cout << "Broadcasting and delivering messages...\n\n";
-    sending_thread = perfect_link.get()->start_sending();
-    receiving_thread =
-        perfect_link.get()->start_receiving([](TransportMessage message) {
-            // std::cout << "Received ack: " << m.get_id() << std::endl;
-            output_file.get()->write("d " + message.address.to_string() + " " +
-                                     std::to_string(message.get_id()) + "\n");
-            // auto bm = BroadcastMessage(message.get_payload(),
-            // message.length); output_file.get()->write(
-            //     "d " + std::to_string(static_cast<int>(bm.get_source())) + "
-            //     " + std::to_string(bm.get_sequence_number()));
-            // auto inner_msg = std::move(bm).get_message();
-            // output_file.get()->write(
-            //     " {" +
-            //     static_cast<StringMessage *>(inner_msg.get())->get_message()
-            //     +
-            //     "}\n");
-        });
-    Address receiver_address = host_lookup.get_address_by_host_id(
-        static_cast<uint8_t>(config.get_receiver_id()));
-    for (uint64_t i = 0; i < config.get_message_count(); i++) {
-        auto em = EmptyMessage();
-        auto m =
-            StringMessage(std::string("Message: ") + std::to_string(i + 1));
-        auto bm = BroadcastMessage(m, static_cast<uint32_t>(i + 1),
-                                   static_cast<uint8_t>(parser.id()));
-        // output_file.get()->write("b " + std::to_string(i + 1) + "\n");
-        perfect_link.get()->broadcast(em);
+    for (uint32_t i = 1; i <= config.get_message_count(); i++) {
+        StringMessage sm(std::string("test ") + std::to_string(i) + " from " +
+                         std::to_string(parser.id()));
+        broadcast.get()->broadcast(sm, i);
     }
 
-    sending_thread.detach();
-    receiving_thread.detach();
+    std::cout << "Broadcasting and delivering messages...\n\n";
 
     // After a process finishes broadcasting,
     // it waits forever for the delivery of messages.
