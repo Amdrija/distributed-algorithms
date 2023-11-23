@@ -25,6 +25,8 @@ public:
     TransportMessage(Address address, std::shared_ptr<char[]> payload,
                      const uint64_t length);
 
+    TransportMessage(TransportMessage &message, Address address);
+
     // constructor for deserializing a message
     TransportMessage(Address address, const char *bytes, uint64_t length);
 

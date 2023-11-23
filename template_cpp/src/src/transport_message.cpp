@@ -15,6 +15,10 @@ TransportMessage::TransportMessage(Address address,
     // std::memcpy(payload.get(), bytes, length);
 }
 
+TransportMessage::TransportMessage(TransportMessage &message, Address address)
+    : id(message.id), payload(message.payload), address(address),
+      length(message.length), is_ack(false) {}
+
 TransportMessage::TransportMessage(Address address, const char *bytes,
                                    uint64_t length)
     : id(0), payload(new char[length - sizeof(id) - sizeof(is_ack)]),

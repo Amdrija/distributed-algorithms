@@ -29,7 +29,6 @@ static void stop(int) {
     std::cout << "Writing output." << std::endl;
     output_file.get()->flush();
     output_file.get()->close();
-    std::cout << "Writing output." << std::endl;
 
     // exit directly from signal handler
     exit(0);
@@ -135,52 +134,33 @@ int main(int argc, char **argv) {
         host_lookup, output_file));
 
     std::cout << "Broadcasting and delivering messages...\n\n";
-    if (config.get_receiver_id() == parser.id()) {
-        receiving_thread = perfect_link.get()->start_receiving(
-            [host_lookup, receiver_id](TransportMessage message) {
-                // std::cout << "d " <<
-                // host_lookup.get_host_id_by_ip(message.address) << " "
-                //           << message.get_id() << std::endl;
-                auto bm =
-                    BroadcastMessage(message.get_payload(), message.length);
-                output_file.get()->write(
-                    "d " + std::to_string(static_cast<int>(bm.get_source())) +
-                    " " + std::to_string(bm.get_sequence_number()));
-                auto inner_msg = std::move(bm).get_message();
-                output_file.get()->write(
-                    " {" +
-                    static_cast<StringMessage *>(inner_msg.get())
-                        ->get_message() +
-                    "}\n");
-
-                // output_file.get()->write(
-                //     "d " +
-                //     std::to_string(static_cast<int>(
-                //         host_lookup.get_host_id_by_ip(message.address))) +
-                //     " " + std::to_string(message.get_id()) + "\n");
-            });
-
-        receiving_thread.detach();
-    } else {
-        sending_thread = perfect_link.get()->start_sending();
-        receiving_thread =
-            perfect_link.get()->start_receiving([](TransportMessage m) {
-                // std::cout << "Received ack: " << m.get_id() << std::endl;
-            });
-        Address receiver_address = host_lookup.get_address_by_host_id(
-            static_cast<uint8_t>(config.get_receiver_id()));
-        for (uint64_t i = 0; i < config.get_message_count(); i++) {
-            auto m =
-                StringMessage(std::string("Message: ") + std::to_string(i + 1));
-            auto bm = BroadcastMessage(m, static_cast<uint32_t>(i + 1),
-                                       static_cast<uint8_t>(parser.id()));
-            output_file.get()->write("b " + std::to_string(i + 1) + "\n");
-            perfect_link.get()->send(receiver_address, bm);
-        }
-
-        sending_thread.detach();
-        receiving_thread.detach();
+    sending_thread = perfect_link.get()->start_sending();
+    receiving_thread =
+        perfect_link.get()->start_receiving([](TransportMessage message) {
+            // std::cout << "Received ack: " << m.get_id() << std::endl;
+            auto bm = BroadcastMessage(message.get_payload(), message.length);
+            output_file.get()->write(
+                "d " + std::to_string(static_cast<int>(bm.get_source())) + " " +
+                std::to_string(bm.get_sequence_number()));
+            auto inner_msg = std::move(bm).get_message();
+            output_file.get()->write(
+                " {" +
+                static_cast<StringMessage *>(inner_msg.get())->get_message() +
+                "}\n");
+        });
+    Address receiver_address = host_lookup.get_address_by_host_id(
+        static_cast<uint8_t>(config.get_receiver_id()));
+    for (uint64_t i = 0; i < config.get_message_count(); i++) {
+        auto m =
+            StringMessage(std::string("Message: ") + std::to_string(i + 1));
+        auto bm = BroadcastMessage(m, static_cast<uint32_t>(i + 1),
+                                   static_cast<uint8_t>(parser.id()));
+        // output_file.get()->write("b " + std::to_string(i + 1) + "\n");
+        perfect_link.get()->broadcast(bm);
     }
+
+    sending_thread.detach();
+    receiving_thread.detach();
 
     // After a process finishes broadcasting,
     // it waits forever for the delivery of messages.

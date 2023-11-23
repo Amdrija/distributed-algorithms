@@ -22,6 +22,7 @@ private:
     HostLookup host_lookup;
     AckSet acked_messages;
     DeliverySet delivered_messages;
+    uint8_t host_id;
     // !Check if writing of send should be when we actually do a UDP send, or
     // when we trigger the !PerfectLink send command.
 
@@ -29,7 +30,8 @@ public:
     PerfectLink(Address address, HostLookup host_lookup,
                 std::shared_ptr<OutputFile> output_file)
         : link(address, host_lookup), host_lookup(host_lookup),
-          acked_messages(host_lookup), delivered_messages(host_lookup) {
+          acked_messages(host_lookup), delivered_messages(host_lookup),
+          host_id(host_lookup.get_host_id_by_ip(address)) {
         std::cout << "Initialized Perfect link on address: "
                   << address.to_string() << std::endl;
     }
@@ -45,6 +47,23 @@ public:
 
         // TODO: How does this even work?
         q.push(TransportMessage(address, std::move(payload), length));
+    }
+
+    void broadcast(Message &message) {
+        uint64_t length = 0;
+        auto payload = message.serialize(length);
+
+        while (q.is_full()) {
+        }
+
+        TransportMessage tm =
+            TransportMessage(this->link.address, std::move(payload), length);
+        for (auto host : this->host_lookup.get_hosts()) {
+            if (host != this->host_id) {
+                auto address = this->host_lookup.get_address_by_host_id(host);
+                q.push(TransportMessage(tm, address));
+            }
+        }
     }
 
     void shut_down() {
