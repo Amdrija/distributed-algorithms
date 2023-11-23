@@ -54,11 +54,13 @@ public:
 
         TransportMessage tm =
             TransportMessage(this->link.address, payload, length);
+        // TODO: THIS IS KILLING BROADCAST PERFORMANCE
+        //  while (q.is_full()) {
+        //  }
         for (auto host : this->host_lookup.get_hosts()) {
             if (host != this->host_id) {
                 auto address = this->host_lookup.get_address_by_host_id(host);
-                // while (q.is_full()) {
-                // }
+
                 q.push(TransportMessage(tm, address));
             }
         }

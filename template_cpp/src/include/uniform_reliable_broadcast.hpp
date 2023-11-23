@@ -23,9 +23,6 @@ public:
           pending_messages(lookup.get_host_count()),
           delivered_messages(lookup.get_host_count()), acked_messages(lookup),
           handler(handler) {
-        std::thread sending_thread = this->link.start_sending();
-        sending_thread.detach();
-
         std::thread receiving_thread =
             this->link.start_receiving([this](TransportMessage t_msg) {
                 // std::cout << "Received: " << t_msg.get_id()
@@ -36,6 +33,9 @@ public:
                     this->lookup.get_host_id_by_ip(t_msg.address));
             });
         receiving_thread.detach();
+
+        std::thread sending_thread = this->link.start_sending();
+        sending_thread.detach();
     }
 
     void broadcast(Message &m, uint32_t sequence_number) {

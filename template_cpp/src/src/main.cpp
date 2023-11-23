@@ -28,8 +28,8 @@ static void stop(int) {
 
     // write/flush output file if necessary
     std::cout << "Writing output." << std::endl;
-    output_file.get()->flush();
-    output_file.get()->close();
+    // output_file.get()->flush();
+    // output_file.get()->close();
 
     // exit directly from signal handler
     exit(0);
@@ -115,28 +115,21 @@ int main(int argc, char **argv) {
     std::cout << "Messages to send: " << config.get_message_count()
               << std::endl;
 
+    std::cout << "Broadcasting and delivering messages...\n\n";
     broadcast =
         std::unique_ptr<UniformReliableBroadcast>(new UniformReliableBroadcast(
             static_cast<uint8_t>(parser.id()), host_lookup,
             [](BroadcastMessage bm) {
                 output_file.get()->write(
                     "d " + std::to_string(static_cast<int>(bm.get_source())) +
-                    " " + std::to_string(bm.get_sequence_number()));
-                auto inner_msg = std::move(bm).get_message();
-                output_file.get()->write(
-                    " {" +
-                    static_cast<StringMessage *>(inner_msg.get())
-                        ->get_message() +
-                    "}\n");
+                    " " + std::to_string(bm.get_sequence_number()) + "\n");
             }));
 
     for (uint32_t i = 1; i <= config.get_message_count(); i++) {
-        StringMessage sm(std::string("test ") + std::to_string(i) + " from " +
-                         std::to_string(parser.id()));
-        broadcast.get()->broadcast(sm, i);
+        EmptyMessage em;
+        output_file.get()->write("b " + std::to_string(i) + "\n");
+        broadcast.get()->broadcast(em, i);
     }
-
-    std::cout << "Broadcasting and delivering messages...\n\n";
 
     // After a process finishes broadcasting,
     // it waits forever for the delivery of messages.
