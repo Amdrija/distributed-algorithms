@@ -152,6 +152,12 @@ int main(int argc, char **argv) {
                     static_cast<StringMessage *>(inner_msg.get())
                         ->get_message() +
                     "}\n");
+
+                // output_file.get()->write(
+                //     "d " +
+                //     std::to_string(static_cast<int>(
+                //         host_lookup.get_host_id_by_ip(message.address))) +
+                //     " " + std::to_string(message.get_id()) + "\n");
             });
 
         receiving_thread.detach();

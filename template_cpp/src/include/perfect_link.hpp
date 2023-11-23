@@ -98,9 +98,10 @@ public:
                     // std::cout << "Received message: " << message.get_id()
                     //           << " from: " << message.address.to_string() <<
                     //           std::endl;
+
+                    this->link.send(TransportMessage::create_ack(message));
                     if (!this->delivered_messages.is_delivered(message)) {
                         this->delivered_messages.deliver(message);
-                        this->link.send(TransportMessage::create_ack(message));
                         // std::cout << "Delivering the message: " <<
                         // message.get_id() << std::endl;
 
