@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 
+#include "fifo_broadcast.hpp"
 #include "fifo_config.hpp"
 #include "hello.h"
 #include "host_lookup.hpp"
@@ -10,11 +11,10 @@
 #include "output_file.hpp"
 #include "parser.hpp"
 #include "perfect_link.hpp"
-#include "uniform_reliable_broadcast.hpp"
 #include <fstream>
 #include <signal.h>
 
-std::unique_ptr<UniformReliableBroadcast> broadcast;
+std::unique_ptr<FifoBroadcast> broadcast;
 std::shared_ptr<OutputFile> output_file;
 
 static void stop(int) {
@@ -116,14 +116,13 @@ int main(int argc, char **argv) {
               << std::endl;
 
     std::cout << "Broadcasting and delivering messages...\n\n";
-    broadcast =
-        std::unique_ptr<UniformReliableBroadcast>(new UniformReliableBroadcast(
-            static_cast<uint8_t>(parser.id()), host_lookup,
-            [](BroadcastMessage bm) {
-                output_file.get()->write(
-                    "d " + std::to_string(static_cast<int>(bm.get_source())) +
-                    " " + std::to_string(bm.get_sequence_number()) + "\n");
-            }));
+    broadcast = std::unique_ptr<FifoBroadcast>(new FifoBroadcast(
+        static_cast<uint8_t>(parser.id()), host_lookup,
+        [](BroadcastMessage bm) {
+            output_file.get()->write(
+                "d " + std::to_string(static_cast<int>(bm.get_source())) + " " +
+                std::to_string(bm.get_sequence_number()) + "\n");
+        }));
 
     for (uint32_t i = 1; i <= config.get_message_count(); i++) {
         EmptyMessage em;
