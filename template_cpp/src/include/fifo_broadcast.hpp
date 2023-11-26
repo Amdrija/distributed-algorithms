@@ -17,6 +17,7 @@ public:
                   std::function<void(BroadcastMessage)> handler)
         : urb(host_id, lookup,
               [this](BroadcastMessage message) {
+                  //   this->handler(std::move(message));
                   this->handle_message(std::move(message));
               }),
           last_delivered(new std::atomic_uint32_t[lookup.get_host_count() + 1]),
@@ -36,24 +37,17 @@ public:
 private:
     void handle_message(BroadcastMessage message) {
         uint8_t host = message.get_source();
-        if (host == 1) {
-            std::cout << "Andrija " << this->last_delivered.get()[host]
-                      << std::endl;
-        }
-        if (this->last_delivered[host] + 1 == message.get_sequence_number()) {
-            this->last_delivered[host]++;
-            this->handler(std::move(message));
+        auto to_deliver = this->pending_messages.get()[host].to_be_delivered(
+            std::move(message), this->last_delivered.get()[host]);
+        std::cout << "MSG: " << message.get_sequence_number()
+                  << " TO DELIVER: " << to_deliver.size() << std::endl;
+        if (!to_deliver.empty()) {
+            for (auto &msg : to_deliver) {
+                this->handler(std::move(msg));
+            }
 
-            // TODO: Possible optimization to process in batches
-            while (!this->pending_messages.get()[host].empty() &&
-                   this->last_delivered[host] + 1 ==
-                       this->pending_messages.get()[host]
-                           .lowest_sequence_number()) {
-                this->last_delivered[host]++;
-                handler(this->pending_messages.get()[host].pop_front());
-            } // Here process the messages in order
-        } else {
-            this->pending_messages.get()->insert(std::move(message));
+            this->last_delivered[host] +=
+                static_cast<uint32_t>(to_deliver.size());
         }
     }
 };

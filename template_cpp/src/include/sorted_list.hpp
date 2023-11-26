@@ -11,8 +11,38 @@ class SortedList {
     std::mutex lock;
 
 public:
-    void insert(BroadcastMessage message) {
+    std::list<BroadcastMessage> to_be_delivered(BroadcastMessage message,
+                                                uint32_t last_delivered) {
+        std::list<BroadcastMessage> result;
         this->lock.lock();
+        this->insert(std::move(message));
+        uint32_t to_deliver = 0;
+        while (!this->list.empty() && last_delivered + to_deliver ==
+                                          this->lowest_sequence_number() - 1) {
+            to_deliver++;
+            result.push_back(this->pop_front());
+        }
+
+        this->lock.unlock();
+
+        return result;
+    }
+
+private:
+    uint32_t lowest_sequence_number() {
+        return list.front().get_sequence_number();
+    }
+
+    bool empty() { return list.empty(); }
+
+    BroadcastMessage pop_front() {
+        BroadcastMessage bm = std::move(list.front());
+        list.pop_front();
+
+        return bm;
+    }
+
+    void insert(BroadcastMessage message) {
         auto begin = list.begin();
 
         while (begin != list.end() &&
@@ -21,31 +51,5 @@ public:
         }
 
         list.insert(begin, std::move(message));
-        this->lock.unlock();
-    }
-
-    uint32_t lowest_sequence_number() {
-        this->lock.lock();
-        auto result = list.front().get_sequence_number();
-        this->lock.unlock();
-
-        return result;
-    }
-
-    bool empty() {
-        this->lock.lock();
-        bool empty = list.empty();
-        this->lock.unlock();
-
-        return empty;
-    }
-
-    BroadcastMessage pop_front() {
-        this->lock.lock();
-        BroadcastMessage bm = std::move(list.front());
-        list.pop_front();
-        this->lock.unlock();
-
-        return bm;
     }
 };

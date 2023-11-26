@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
 
     for (uint32_t i = 1; i <= config.get_message_count(); i++) {
         EmptyMessage em;
-        output_file.get()->write("b " + std::to_string(i) + "\n");
+        // output_file.get()->write("b " + std::to_string(i) + "\n");
         broadcast.get()->broadcast(em, i);
     }
 

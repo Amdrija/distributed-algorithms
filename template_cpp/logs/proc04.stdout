@@ -1,0 +1,60 @@
+Source files that end in .c will be compiled automatically with gcc,
+while source files that end in .cpp will be compiled automatically with g++.
+For those that prefer C, they can either use the provided C++
+argument parser and write everything else in C, or delete the
+provided main.cpp and start from scratch.
+Those who have both .c and .cpp files should ensure to have a compatible ABI when calling C functions from C++ (see `hello.h` on how to do this).
+
+My PID: 19712
+From a new terminal type `kill -SIGINT 19712` or `kill -SIGTERM 19712` to stop processing packets
+
+My ID: 4
+
+List of resolved hosts is:
+==========================
+1
+Human-readable IP: 127.0.0.1
+Machine-readable IP: 16777343
+Human-readbale Port: 11001
+Machine-readbale Port: 63786
+
+2
+Human-readable IP: 127.0.0.1
+Machine-readable IP: 16777343
+Human-readbale Port: 11002
+Machine-readbale Port: 64042
+
+3
+Human-readable IP: 127.0.0.1
+Machine-readable IP: 16777343
+Human-readbale Port: 11003
+Machine-readbale Port: 64298
+
+4
+Human-readable IP: 127.0.0.1
+Machine-readable IP: 16777343
+Human-readbale Port: 11004
+Machine-readbale Port: 64554
+
+
+Path to output:
+===============
+/home/andrija/Documents/EPFL/distributed_algorithms/distributed-algorithms/template_cpp/logs/proc04.output
+
+Path to config:
+===============
+logs/config
+
+Messages to send: 100000
+Broadcasting and delivering messages...
+
+Initialized FairLoss link on address: 127.0.0.1:11004
+Initialized Perfect link on address: 127.0.0.1:11004
+Started receiving on: 127.0.0.1:11004
+Started sending on: 127.0.0.1:11004
+Stopping receiving on address: 127.0.0.1:11004
+Stopping sending on node: 127.0.0.1:11004
+Immediately stopping network packet processing.
+Writing output.
+FLUSHING FILE
+CLOSING FILE

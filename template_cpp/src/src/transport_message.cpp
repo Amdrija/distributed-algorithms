@@ -40,7 +40,7 @@ TransportMessage::serialize(uint64_t &serialized_length) {
     std::memcpy(bytes.get() + sizeof(this->id) + sizeof(this->is_ack),
                 this->payload.get(), this->length);
 
-    return std::move(bytes);
+    return bytes;
 }
 
 std::shared_ptr<char[]> TransportMessage::get_payload() {
