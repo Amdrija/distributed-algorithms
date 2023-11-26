@@ -36,18 +36,20 @@ public:
 
 private:
     void handle_message(BroadcastMessage message) {
+        // std::cout << "DELIVERING" << std::endl;
         uint8_t host = message.get_source();
+        std::cout << "HOST: " << static_cast<int>(host) << std::endl;
         auto to_deliver = this->pending_messages.get()[host].to_be_delivered(
             std::move(message), this->last_delivered.get()[host]);
-        std::cout << "MSG: " << message.get_sequence_number()
-                  << " TO DELIVER: " << to_deliver.size() << std::endl;
+        // std::cout << "AFTER TO DELIVER" << std::endl;
         if (!to_deliver.empty()) {
-            for (auto &msg : to_deliver) {
-                this->handler(std::move(msg));
-            }
-
             this->last_delivered[host] +=
                 static_cast<uint32_t>(to_deliver.size());
+        }
+        while (!to_deliver.empty()) {
+            // std::cout << "HANDLING MESSAGE: " << std::endl;
+            this->handler(std::move(to_deliver.front()));
+            to_deliver.pop_front();
         }
     }
 };
