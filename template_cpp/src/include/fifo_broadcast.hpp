@@ -6,7 +6,7 @@
 #include <condition_variable>
 #include <mutex>
 
-#define SEND_Q_SIZE 1000
+#define SEND_Q_SIZE 100
 // TODO: Improve the atrocious performance
 class FifoBroadcast {
     uint8_t host_id;
@@ -23,7 +23,7 @@ public:
                   std::function<void(BroadcastMessage)> handler)
         : host_id(host_id), urb(host_id, lookup,
                                 [this](BroadcastMessage message) {
-                                    //   this->handler(std::move(message));
+                                    // this->handler(std::move(message));
                                     this->handle_message(std::move(message));
                                 }),
           last_delivered(new std::atomic_uint32_t[lookup.get_host_count() + 1]),

@@ -23,8 +23,6 @@ private:
     AckSet acked_messages;
     DeliverySet delivered_messages;
     uint8_t host_id;
-    // !Check if writing of send should be when we actually do a UDP send, or
-    // when we trigger the !PerfectLink send command.
 
 public:
     PerfectLink(Address address, HostLookup host_lookup)
@@ -79,6 +77,7 @@ public:
 
         return std::thread([this]() {
             while (true) {
+                // TODO: Use a condition variable isntead
                 auto first = this->q.dequeue();
                 if (first.has_value()) {
                     TransportMessage m = first.value();
