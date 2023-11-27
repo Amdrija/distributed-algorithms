@@ -28,8 +28,8 @@ static void stop(int) {
 
     // write/flush output file if necessary
     std::cout << "Writing output." << std::endl;
-    // output_file.get()->flush();
-    // output_file.get()->close();
+    output_file.get()->flush();
+    output_file.get()->close();
 
     // exit directly from signal handler
     exit(0);
@@ -126,8 +126,13 @@ int main(int argc, char **argv) {
 
     for (uint32_t i = 1; i <= config.get_message_count(); i++) {
         EmptyMessage em;
-        output_file.get()->write("b " + std::to_string(i) + "\n");
+        // output_file.get()->write("b " + std::to_string(i) + "\n");
         broadcast.get()->broadcast(em, i);
+        // if (i % 1000 == 0) {
+        //     // Calculate based on the number of processes
+        //     // in geenral, there should be a limit to the send queue actually
+        //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // }
     }
 
     // After a process finishes broadcasting,
