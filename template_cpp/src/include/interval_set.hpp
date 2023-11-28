@@ -1,40 +1,31 @@
 #pragma once
 
-#include <vector>
 #include <cstdint>
 #include <string>
+#include <vector>
 
-struct Interval
-{
+struct Interval {
     uint32_t start;
     uint32_t end;
 
     Interval(uint32_t start, uint32_t end) : start(start), end(end) {}
 };
 
-class IntervalSet
-{
+class IntervalSet {
 private:
     std::vector<Interval> intervals;
 
 public:
-    IntervalSet()
-    {
-        this->intervals.push_back(Interval(0, 0));
-    }
+    IntervalSet() { this->intervals.push_back(Interval(0, 0)); }
 
-    bool insert(uint32_t value)
-    {
+    bool insert(uint32_t value) {
         auto current = this->intervals.begin();
-        while (current != this->intervals.cend() && value > current->end)
-        {
+        while (current != this->intervals.cend() && value > current->end) {
             current++;
         }
 
-        if (current == this->intervals.cend())
-        {
-            if ((current - 1)->end == value - 1)
-            {
+        if (current == this->intervals.cend()) {
+            if ((current - 1)->end == value - 1) {
                 (current - 1)->end = value;
                 return true;
             }
@@ -43,30 +34,25 @@ public:
             return true;
         }
 
-        if (value >= current->start)
-        {
+        if (value >= current->start) {
             return false;
         }
 
-        if (value > (current - 1)->end + 1 && value < current->start - 1)
-        {
+        if (value > (current - 1)->end + 1 && value < current->start - 1) {
             this->intervals.insert(current, Interval(value, value));
 
             return true;
         }
 
-        if ((current - 1)->end == value - 1)
-        {
+        if ((current - 1)->end == value - 1) {
             (current - 1)->end = value;
         }
 
-        if (current->start == value + 1)
-        {
+        if (current->start == value + 1) {
             current->start = value;
         }
 
-        if (current->start == (current - 1)->end)
-        {
+        if (current->start == (current - 1)->end) {
             current->start = (current - 1)->start;
             this->intervals.erase(current - 1);
         }
@@ -74,22 +60,18 @@ public:
         return true;
     }
 
-    bool contains(uint32_t value)
-    {
+    bool contains(uint32_t value) {
         auto current = this->intervals.begin();
-        while (current != this->intervals.cend() && value > current->end)
-        {
+        while (current != this->intervals.cend() && value > current->end) {
             current++;
         }
 
         return current != this->intervals.cend() && value >= current->start;
     }
 
-    std::string to_string()
-    {
+    std::string to_string() {
         std::string result;
-        for (auto interval : this->intervals)
-        {
+        for (auto interval : this->intervals) {
             result += "[";
             result += std::to_string(interval.start);
             result += ",";
@@ -100,4 +82,6 @@ public:
 
         return result;
     }
+
+    uint32_t first_non_acked() { return this->intervals[0].end + 1; }
 };

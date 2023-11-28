@@ -124,16 +124,23 @@ int main(int argc, char **argv) {
                 std::to_string(bm.get_sequence_number()) + "\n");
         }));
 
-    for (uint32_t i = 1; i <= config.get_message_count(); i++) {
-        EmptyMessage em;
-        // output_file.get()->write("b " + std::to_string(i) + "\n");
-        broadcast.get()->broadcast(em, i);
-        // if (i % 1000 == 0) {
-        //     // Calculate based on the number of processes
-        //     // in geenral, there should be a limit to the send queue actually
-        //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // }
-    }
+    std::thread([config]() {
+        for (uint32_t i = 1; i <= config.get_message_count(); i++) {
+            EmptyMessage em;
+            output_file.get()->write("b " + std::to_string(i) + "\n");
+            if (!broadcast.get()->broadcast(em, i)) {
+                std::cout << "KILLED SENDING THREAD" << std::endl;
+                break;
+            }
+            // if (i % 1000 == 0) {
+            //     // Calculate based on the number of processes
+            //     // in geenral, there should be a limit to the send queue
+            //     actually
+            //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            // }
+        }
+        std::cout << "FINISHED SENDING THREAD" << std::endl;
+    }).detach();
 
     // After a process finishes broadcasting,
     // it waits forever for the delivery of messages.

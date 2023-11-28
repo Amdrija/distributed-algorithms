@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <sys/socket.h>
+#include <unistd.h>
 
 // technically, the actual size is lower, but a few bytes should not make an
 // impact
@@ -78,11 +79,13 @@ public:
                          reinterpret_cast<sockaddr *>(&source), &source_length);
         }
 
+        close(this->socket_fd);
         std::cout << "Stopped receiveing on address: "
                   << this->address.to_string() << std::endl;
     }
 
     void stop_receiving() {
+        // here call to shutdown() the socket
         this->continue_receiving = false;
         std::cout << "Stopping receiving on address: "
                   << this->address.to_string() << std::endl;

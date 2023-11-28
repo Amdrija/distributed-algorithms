@@ -43,17 +43,17 @@ public:
     void flush() {
         std::cout << "FLUSHING FILE" << std::endl;
         this->file.write(cache.get(), this->cache_size);
-        // this->lock.lock();
+        this->lock.lock();
         this->cache_size = 0;
         this->file.flush();
-        // this->lock.unlock();
+        this->lock.unlock();
     }
 
     // TODO: Maybe locks aren't needed?
     void close() {
-        // this->lock.lock();
+        this->lock.lock();
         std::cout << "CLOSING FILE" << std::endl;
         this->file.close();
-        // this->lock.unlock();
+        this->lock.unlock();
     }
 };

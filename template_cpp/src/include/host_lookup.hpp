@@ -15,6 +15,7 @@ private:
 
 public:
     HostLookup(std::string file_name) {
+        std::srand(static_cast<unsigned int>(std::time(nullptr)));
         std::string line;
         std::ifstream file(file_name);
 
@@ -63,6 +64,20 @@ public:
         std::vector<uint8_t> hosts;
         for (auto pair : this->host_to_address) {
             hosts.push_back(pair.first);
+        }
+
+        return hosts;
+    }
+
+    std::vector<uint8_t> get_random_hosts() {
+        std::vector<uint8_t> hosts = this->get_hosts();
+        for (uint8_t i = 0; i <= hosts.size() - 2; i++) {
+            uint8_t j =
+                static_cast<uint8_t>(i + std::rand() % (hosts.size() - i));
+
+            auto temp = hosts[i];
+            hosts[i] = hosts[j];
+            hosts[j] = temp;
         }
 
         return hosts;

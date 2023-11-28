@@ -6,8 +6,6 @@
 #include <condition_variable>
 #include <mutex>
 
-#define SEND_Q_SIZE 100
-// TODO: Improve the atrocious performance
 class FifoBroadcast {
     uint8_t host_id;
     UniformReliableBroadcast urb;
@@ -16,6 +14,8 @@ class FifoBroadcast {
     std::function<void(BroadcastMessage)> handler;
     std::mutex mutex;
     std::condition_variable cv;
+    bool stop_sending = false;
+    const uint32_t SEND_Q_SIZE = 20;
 
 public:
     // the +1 is because the hosts start from 1
@@ -23,44 +23,51 @@ public:
                   std::function<void(BroadcastMessage)> handler)
         : host_id(host_id), urb(host_id, lookup,
                                 [this](BroadcastMessage message) {
-                                    // this->handler(std::move(message));
                                     this->handle_message(std::move(message));
                                 }),
           last_delivered(new std::atomic_uint32_t[lookup.get_host_count() + 1]),
           pending_messages(new SortedList[lookup.get_host_count() + 1]),
-          handler(handler) {
+          handler(handler),
+          SEND_Q_SIZE(
+              100 - (lookup.get_host_count() * lookup.get_host_count()) / 200) {
         for (auto host : lookup.get_hosts()) {
             this->last_delivered[host] = 0;
         }
     }
 
-    void broadcast(Message &m, uint32_t sequence_number) {
-        // while (send_q.size() > SEND_Q_SIZE) {
-        // }
-        // Here, I think there should be a handler to start_sending
-        // where you can specify to decrement the message_broadcasted_count
-        // and then here block until the message_broadcasted_count is 0
-        // std::cout << this->last_delivered[this->host_id] << " "
-        //           << static_cast<int64_t>(sequence_number) - SEND_Q_SIZE
-        //           << std::endl;
-        // while (this->last_delivered[this->host_id] <
-        //        static_cast<int64_t>(sequence_number) - SEND_Q_SIZE) {
-        // }
+    bool broadcast(Message &m, uint32_t sequence_number) {
         {
 
             std::unique_lock<std::mutex> lock(this->mutex);
-            if (this->last_delivered[this->host_id] <
-                static_cast<int64_t>(sequence_number) - SEND_Q_SIZE) {
+            while (this->last_delivered[this->host_id] <
+                   static_cast<int64_t>(sequence_number) - this->SEND_Q_SIZE) {
                 // std::cout << "SLEEPING" << std::endl;
                 this->cv.wait(lock);
                 // std::cout << "WOKE UP" << std::endl;
+                if (this->stop_sending) {
+                    return false;
+                }
             }
         }
 
+        if (this->stop_sending) {
+            return false;
+        }
+
         this->urb.broadcast(m, sequence_number);
+
+        return true;
     }
 
-    void shut_down() { this->urb.shut_down(); }
+    void shut_down() {
+        {
+            std::unique_lock<std::mutex> lock(this->mutex);
+            this->stop_sending = true;
+        }
+        this->cv.notify_all();
+
+        this->urb.shut_down();
+    }
 
 private:
     void handle_message(BroadcastMessage message) {

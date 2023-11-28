@@ -39,8 +39,10 @@ public:
     }
 
     void broadcast(Message &m, uint32_t sequence_number) {
-        deliver(BroadcastMessage(m, sequence_number, this->host_id),
-                this->host_id);
+        auto bm = BroadcastMessage(m, sequence_number, this->host_id);
+        this->link.broadcast(bm);
+        // deliver(BroadcastMessage(m, sequence_number, this->host_id),
+        //         this->host_id);
     }
 
     void shut_down() { this->link.shut_down(); }
@@ -56,7 +58,9 @@ private:
             // std::cout << "PENDING" << std::endl;
             this->acked_messages.ack(m, this->host_id);
             this->pending_messages.add(m);
-            this->link.broadcast(m);
+            if (m.get_source() != this->host_id) {
+                this->link.broadcast(m);
+            }
         }
         // std::cout << "ACK_COUNT: "
         //           << static_cast<int>(this->acked_messages.ack_count(m))

@@ -17,5 +17,5 @@ public:
         file.close();
     }
 
-    uint32_t get_message_count() { return this->message_count; }
+    uint32_t get_message_count() const { return this->message_count; }
 };
