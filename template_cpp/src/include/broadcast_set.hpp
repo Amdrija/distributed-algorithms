@@ -18,10 +18,10 @@ public:
 
     bool contains(BroadcastMessage &message) {
         uint8_t host_id = static_cast<uint8_t>(message.get_source() - 1);
-        this->lock.lock();
+        // this->lock.lock();
         bool found =
             this->messages[host_id].contains(message.get_sequence_number());
-        this->lock.unlock();
+        // this->lock.unlock();
 
         return found;
     }
@@ -29,8 +29,8 @@ public:
     void add(BroadcastMessage &message) {
         uint8_t host_id = static_cast<uint8_t>(message.get_source() - 1);
 
-        this->lock.lock();
+        // this->lock.lock();
         this->messages[host_id].insert(message.get_sequence_number());
-        this->lock.unlock();
+        // this->lock.unlock();
     }
 };

@@ -24,12 +24,15 @@ static void stop(int) {
 
     // immediately stop network packet processing
     broadcast.get()->shut_down();
+    // WAITING FOR THREADS TO SHUT DOWN
+    std::cout << "Waiting for threads to shut down" << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     std::cout << "Immediately stopping network packet processing.\n";
 
     // write/flush output file if necessary
     std::cout << "Writing output." << std::endl;
-    output_file.get()->flush();
-    output_file.get()->close();
+    // output_file.get()->flush();
+    // output_file.get()->close();
 
     // exit directly from signal handler
     exit(0);
@@ -85,14 +88,14 @@ int main(int argc, char **argv) {
     std::cout << "List of resolved hosts is:\n";
     std::cout << "==========================\n";
     auto hosts = parser.hosts();
-    for (auto &host : hosts) {
-        std::cout << host.id << "\n";
-        std::cout << "Human-readable IP: " << host.ipReadable() << "\n";
-        std::cout << "Machine-readable IP: " << host.ip << "\n";
-        std::cout << "Human-readbale Port: " << host.portReadable() << "\n";
-        std::cout << "Machine-readbale Port: " << host.port << "\n";
-        std::cout << "\n";
-    }
+    // for (auto &host : hosts) {
+    //     std::cout << host.id << "\n";
+    //     std::cout << "Human-readable IP: " << host.ipReadable() << "\n";
+    //     std::cout << "Machine-readable IP: " << host.ip << "\n";
+    //     std::cout << "Human-readbale Port: " << host.portReadable() << "\n";
+    //     std::cout << "Machine-readbale Port: " << host.port << "\n";
+    //     std::cout << "\n";
+    // }
     std::cout << "\n";
     HostLookup host_lookup(parser.hostsPath());
 

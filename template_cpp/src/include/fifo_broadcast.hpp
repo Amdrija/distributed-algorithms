@@ -85,11 +85,12 @@ private:
             }
             // std::cout << "NOTIFYING" << std::endl;
             this->cv.notify_all();
-        }
-        while (!to_deliver.empty()) {
-            // std::cout << "HANDLING MESSAGE: " << std::endl;
-            this->handler(std::move(to_deliver.front()));
-            to_deliver.pop_front();
+
+            while (!to_deliver.empty()) {
+                // std::cout << "HANDLING MESSAGE: " << std::endl;
+                this->handler(std::move(to_deliver.front()));
+                to_deliver.pop_front();
+            }
         }
     }
 };
