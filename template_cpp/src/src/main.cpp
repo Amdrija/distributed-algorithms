@@ -114,36 +114,60 @@ int main(int argc, char **argv) {
     std::cout << "Path to config:\n";
     std::cout << "===============\n";
     std::cout << parser.configPath() << "\n\n";
-    FifoConfig config(parser.configPath());
-    std::cout << "Messages to send: " << config.get_message_count()
-              << std::endl;
 
-    std::cout << "Broadcasting and delivering messages...\n\n";
-    broadcast = std::unique_ptr<FifoBroadcast>(new FifoBroadcast(
-        static_cast<uint8_t>(parser.id()), host_lookup,
-        [](BroadcastMessage bm) {
-            output_file.get()->write(
-                "d " + std::to_string(static_cast<int>(bm.get_source())) + " " +
-                std::to_string(bm.get_sequence_number()) + "\n");
-        }));
+    std::unordered_set<propose_value> set;
+    set.emplace(6);
+    set.emplace(7);
+    set.emplace(8);
+    set.emplace(9);
+    ProposeMessage msg(10, 11, set);
 
-    std::thread([config]() {
-        for (uint32_t i = 1; i <= config.get_message_count(); i++) {
-            EmptyMessage em;
-            output_file.get()->write("b " + std::to_string(i) + "\n");
-            if (!broadcast.get()->broadcast(em, i)) {
-                std::cout << "KILLED SENDING THREAD" << std::endl;
-                break;
-            }
-            // if (i % 1000 == 0) {
-            //     // Calculate based on the number of processes
-            //     // in geenral, there should be a limit to the send queue
-            //     actually
-            //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            // }
-        }
-        std::cout << "FINISHED SENDING THREAD" << std::endl;
-    }).detach();
+    uint64_t length;
+    auto serialized = msg.serialize(length);
+    std::cout << "Serialized: " << length << std::endl;
+    std::shared_ptr<char[]> shared(new char[length]);
+    std::memcpy(shared.get(), serialized.get(), length);
+    ProposeMessage des(shared, length);
+
+    std::cout << "Round: " << des.round << std::endl;
+    std::cout << "Proposal number: " << des.proposal_number << std::endl;
+    std::cout << "Proposed values: ";
+    for (auto value : des.proposed_values) {
+        std::cout << value << ", ";
+    }
+    std::cout << std::endl;
+
+    return 0;
+    // FifoConfig config(parser.configPath());
+    // std::cout << "Messages to send: " << config.get_message_count()
+    //           << std::endl;
+
+    // std::cout << "Broadcasting and delivering messages...\n\n";
+    // broadcast = std::unique_ptr<FifoBroadcast>(new FifoBroadcast(
+    //     static_cast<uint8_t>(parser.id()), host_lookup,
+    //     [](BroadcastMessage bm) {
+    //         output_file.get()->write(
+    //             "d " + std::to_string(static_cast<int>(bm.get_source())) + "
+    //             " + std::to_string(bm.get_sequence_number()) + "\n");
+    //     }));
+
+    // std::thread([config]() {
+    //     for (uint32_t i = 1; i <= config.get_message_count(); i++) {
+    //         EmptyMessage em;
+    //         output_file.get()->write("b " + std::to_string(i) + "\n");
+    //         if (!broadcast.get()->broadcast(em, i)) {
+    //             std::cout << "KILLED SENDING THREAD" << std::endl;
+    //             break;
+    //         }
+    //         // if (i % 1000 == 0) {
+    //         //     // Calculate based on the number of processes
+    //         //     // in geenral, there should be a limit to the send queue
+    //         //     actually
+    //         // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    //         // }
+    //     }
+    //     std::cout << "FINISHED SENDING THREAD" << std::endl;
+    // }).detach();
 
     // After a process finishes broadcasting,
     // it waits forever for the delivery of messages.

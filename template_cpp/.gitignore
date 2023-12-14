@@ -6,6 +6,7 @@
 bin/da_proc
 target/
 *.zip
+logs/
 
 ### C ###
 # Prerequisites
