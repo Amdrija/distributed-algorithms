@@ -39,10 +39,6 @@ public:
         uint64_t length = 0;
         auto payload = message.serialize(length);
 
-        while (q.is_full()) {
-        }
-
-        // TODO: How does this even work?
         q.push(TransportMessage(address, std::move(payload), length));
     }
 
@@ -52,15 +48,13 @@ public:
 
         TransportMessage tm =
             TransportMessage(this->link.address, payload, length);
-        // TODO: THIS IS KILLING BROADCAST PERFORMANCE
-        //  while (q.is_full()) {
-        //  }
-        for (auto host : this->host_lookup.get_hosts()) {
-            if (host != this->host_id) {
-                auto address = this->host_lookup.get_address_by_host_id(host);
 
-                q.push(TransportMessage(tm, address));
-            }
+        for (auto host : this->host_lookup.get_hosts()) {
+            // if (host != this->host_id) {
+            auto address = this->host_lookup.get_address_by_host_id(host);
+
+            q.push(TransportMessage(tm, address));
+            // }
         }
     }
 

@@ -3,7 +3,7 @@
 #include "transport_message.hpp"
 #include <unordered_set>
 
-enum MessageType { Empty, String, Broadcast, Proposal };
+enum MessageType { Empty, String, Broadcast, Propose };
 
 class Message {
 protected:
@@ -160,18 +160,23 @@ public:
 
 typedef uint64_t propose_value;
 
+enum ProposeType { Proposal, Ack, Nack };
+
 class ProposeMessage : public Message {
 public:
     uint64_t round;
     uint64_t proposal_number;
+    ProposeType propose_type;
     std::unordered_set<propose_value> proposed_values;
     ProposeMessage(uint64_t round, uint64_t proposal_number,
-                   std::unordered_set<propose_value> proposed_value)
-        : Message(MessageType::Proposal), round(round),
-          proposal_number(proposal_number), proposed_values(proposed_value) {}
+                   std::unordered_set<propose_value> proposed_value,
+                   ProposeType propose_type)
+        : Message(MessageType::Propose), round(round),
+          proposal_number(proposal_number), propose_type(propose_type),
+          proposed_values(proposed_value) {}
 
     ProposeMessage(std::shared_ptr<char[]> payload, const uint64_t length)
-        : Message(MessageType::Proposal) {
+        : Message(MessageType::Propose) {
         size_t offset = sizeof(this->type);
         std::memcpy(&this->round, payload.get() + offset, sizeof(this->round));
         offset += sizeof(this->round);
@@ -179,6 +184,10 @@ public:
         std::memcpy(&this->proposal_number, payload.get() + offset,
                     sizeof(this->proposal_number));
         offset += sizeof(this->proposal_number);
+
+        std::memcpy(&this->propose_type, payload.get() + offset,
+                    sizeof(this->propose_type));
+        offset += sizeof(this->propose_type);
 
         size_t set_size;
         std::memcpy(&set_size, payload.get() + offset, sizeof(set_size));
@@ -196,7 +205,8 @@ public:
     virtual std::unique_ptr<char[]> serialize(uint64_t &length) {
         size_t set_size = this->proposed_values.size();
         length = sizeof(type) + sizeof(round) + sizeof(proposal_number) +
-                 sizeof(set_size) + sizeof(propose_value) * set_size;
+                 sizeof(this->propose_type) + sizeof(set_size) +
+                 sizeof(propose_value) * set_size;
 
         std::unique_ptr<char[]> payload(new char[length]);
 
@@ -210,6 +220,10 @@ public:
         std::memcpy(payload.get() + offset, &this->proposal_number,
                     sizeof(this->proposal_number));
         offset += sizeof(this->proposal_number);
+
+        std::memcpy(payload.get() + offset, &this->propose_type,
+                    sizeof(this->propose_type));
+        offset += sizeof(this->propose_type);
 
         std::memcpy(payload.get() + offset, &set_size, sizeof(set_size));
         offset += sizeof(set_size);

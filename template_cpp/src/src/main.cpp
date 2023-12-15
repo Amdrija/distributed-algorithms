@@ -7,6 +7,7 @@
 #include "hello.h"
 #include "host_lookup.hpp"
 #include "interval_set.hpp"
+#include "lattice_agreement.hpp"
 #include "network_config.hpp"
 #include "output_file.hpp"
 #include "parser.hpp"
@@ -14,7 +15,7 @@
 #include <fstream>
 #include <signal.h>
 
-std::unique_ptr<FifoBroadcast> broadcast;
+std::unique_ptr<LatticeAgreement> agreement;
 std::shared_ptr<OutputFile> output_file;
 
 static void stop(int) {
@@ -23,7 +24,7 @@ static void stop(int) {
     signal(SIGINT, SIG_DFL);
 
     // immediately stop network packet processing
-    broadcast.get()->shut_down();
+    agreement->shut_down();
     // WAITING FOR THREADS TO SHUT DOWN
     std::cout << "Waiting for threads to shut down" << std::endl;
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -115,29 +116,27 @@ int main(int argc, char **argv) {
     std::cout << "===============\n";
     std::cout << parser.configPath() << "\n\n";
 
-    std::unordered_set<propose_value> set;
-    set.emplace(6);
-    set.emplace(7);
-    set.emplace(8);
-    set.emplace(9);
-    ProposeMessage msg(10, 11, set);
+    auto id = parser.id();
+    agreement = std::unique_ptr<LatticeAgreement>(new LatticeAgreement(
+        host_lookup, static_cast<uint8_t>(parser.id()),
+        [id](ProposeMessage msg) {
+            std::cout << id << " Round: " << msg.round
+                      << " Proposal number: " << msg.proposal_number << " set:";
 
-    uint64_t length;
-    auto serialized = msg.serialize(length);
-    std::cout << "Serialized: " << length << std::endl;
-    std::shared_ptr<char[]> shared(new char[length]);
-    std::memcpy(shared.get(), serialized.get(), length);
-    ProposeMessage des(shared, length);
+            for (auto value : msg.proposed_values) {
+                std::cout << " " << value;
+            }
 
-    std::cout << "Round: " << des.round << std::endl;
-    std::cout << "Proposal number: " << des.proposal_number << std::endl;
-    std::cout << "Proposed values: ";
-    for (auto value : des.proposed_values) {
-        std::cout << value << ", ";
-    }
-    std::cout << std::endl;
+            std::cout << std::endl;
+            // output_file->write(
+            //         "d " + std::to_string(static_cast<int>(bm.get_source()))
+            //         + " " + std::to_string(bm.get_sequence_number()) + "\n");
+        }));
 
-    return 0;
+    std::unordered_set<propose_value> propose_set;
+    propose_set.insert(parser.id());
+    agreement->propose(1, propose_set);
+
     // FifoConfig config(parser.configPath());
     // std::cout << "Messages to send: " << config.get_message_count()
     //           << std::endl;
@@ -147,8 +146,8 @@ int main(int argc, char **argv) {
     //     static_cast<uint8_t>(parser.id()), host_lookup,
     //     [](BroadcastMessage bm) {
     //         output_file.get()->write(
-    //             "d " + std::to_string(static_cast<int>(bm.get_source())) + "
-    //             " + std::to_string(bm.get_sequence_number()) + "\n");
+    //             "d " + std::to_string(static_cast<int>(bm.get_source()))
+    //             + " " + std::to_string(bm.get_sequence_number()) + "\n");
     //     }));
 
     // std::thread([config]() {
@@ -161,9 +160,11 @@ int main(int argc, char **argv) {
     //         }
     //         // if (i % 1000 == 0) {
     //         //     // Calculate based on the number of processes
-    //         //     // in geenral, there should be a limit to the send queue
+    //         //     // in geenral, there should be a limit to the send
+    //         queue
     //         //     actually
-    //         // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    //         //
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     //         // }
     //     }
     //     std::cout << "FINISHED SENDING THREAD" << std::endl;
