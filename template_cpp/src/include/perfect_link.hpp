@@ -50,11 +50,11 @@ public:
             TransportMessage(this->link.address, payload, length);
 
         for (auto host : this->host_lookup.get_hosts()) {
-            // if (host != this->host_id) {
-            auto address = this->host_lookup.get_address_by_host_id(host);
+            if (host != this->host_id) {
+                auto address = this->host_lookup.get_address_by_host_id(host);
 
-            q.push(TransportMessage(tm, address));
-            // }
+                q.push(TransportMessage(tm, address));
+            }
         }
     }
 

@@ -8,6 +8,7 @@
 #include "host_lookup.hpp"
 #include "interval_set.hpp"
 #include "lattice_agreement.hpp"
+#include "lattice_config.hpp"
 #include "network_config.hpp"
 #include "output_file.hpp"
 #include "parser.hpp"
@@ -116,59 +117,46 @@ int main(int argc, char **argv) {
     std::cout << "===============\n";
     std::cout << parser.configPath() << "\n\n";
 
+    LatticeConfig config(parser.configPath());
+    std::cout << "Rounds: " << config.round_count << std::endl;
+    std::cout << "Set max size: " << config.set_max_size << std::endl;
+    std::cout << "Distinct count: " << config.distinct_count << std::endl;
+    int i = 0;
+    for (auto set : config.proposals) {
+        std::cout << "Proposed set " << ++i;
+        for (auto value : set) {
+            std::cout << " " << value;
+        }
+        std::cout << std::endl;
+    }
+
     auto id = parser.id();
     agreement = std::unique_ptr<LatticeAgreement>(new LatticeAgreement(
         host_lookup, static_cast<uint8_t>(parser.id()),
-        [id](ProposeMessage msg) {
-            std::cout << id << " Round: " << msg.round
-                      << " Proposal number: " << msg.proposal_number << " set:";
+        [id](std::unordered_set<propose_value> decided_set, uint64_t round) {
+            std::cout << "Decided: " << round << std::endl;
+            // std::string result = "Round " + std::to_string(round) + " set: ";
+            std::string result;
 
-            for (auto value : msg.proposed_values) {
-                std::cout << " " << value;
+            // std::cout << "Round: " << round << " set: ";
+            for (auto value : decided_set) {
+                // std::cout << " " << value;
+                result += std::to_string(value) + " ";
             }
 
-            std::cout << std::endl;
-            // output_file->write(
-            //         "d " + std::to_string(static_cast<int>(bm.get_source()))
-            //         + " " + std::to_string(bm.get_sequence_number()) + "\n");
+            result.pop_back();
+
+            output_file->write(result + "\n");
         }));
 
-    std::unordered_set<propose_value> propose_set;
-    propose_set.insert(parser.id());
-    agreement->propose(1, propose_set);
-
-    // FifoConfig config(parser.configPath());
-    // std::cout << "Messages to send: " << config.get_message_count()
-    //           << std::endl;
-
-    // std::cout << "Broadcasting and delivering messages...\n\n";
-    // broadcast = std::unique_ptr<FifoBroadcast>(new FifoBroadcast(
-    //     static_cast<uint8_t>(parser.id()), host_lookup,
-    //     [](BroadcastMessage bm) {
-    //         output_file.get()->write(
-    //             "d " + std::to_string(static_cast<int>(bm.get_source()))
-    //             + " " + std::to_string(bm.get_sequence_number()) + "\n");
-    //     }));
-
-    // std::thread([config]() {
-    //     for (uint32_t i = 1; i <= config.get_message_count(); i++) {
-    //         EmptyMessage em;
-    //         output_file.get()->write("b " + std::to_string(i) + "\n");
-    //         if (!broadcast.get()->broadcast(em, i)) {
-    //             std::cout << "KILLED SENDING THREAD" << std::endl;
-    //             break;
-    //         }
-    //         // if (i % 1000 == 0) {
-    //         //     // Calculate based on the number of processes
-    //         //     // in geenral, there should be a limit to the send
-    //         queue
-    //         //     actually
-    //         //
-    //         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    //         // }
-    //     }
-    //     std::cout << "FINISHED SENDING THREAD" << std::endl;
-    // }).detach();
+    std::thread([config]() {
+        for (uint64_t i = 0; i < config.round_count; i++) {
+            if (!agreement->propose(i + 1, config.proposals[i])) {
+                break;
+            }
+        }
+        std::cout << "FINISHED SENDING THREAD" << std::endl;
+    }).detach();
 
     // After a process finishes broadcasting,
     // it waits forever for the delivery of messages.
