@@ -167,10 +167,10 @@ private:
             this->cv.notify_all();
         } else {
             this->active_proposal[message.round]++;
-            // Do I need to se anything else here as well?
-            // I don't think so
             this->ack_count[message.round] = 1;
             this->nack_count[message.round] = 0;
+            LatticeAgreement::set_union(this->accepted_value[message.round],
+                                        this->proposed_value[message.round]);
 
             ProposeMessage new_proposal(
                 message.round, this->active_proposal[message.round],
