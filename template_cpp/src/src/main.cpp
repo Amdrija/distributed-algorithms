@@ -133,20 +133,12 @@ int main(int argc, char **argv) {
     auto id = parser.id();
     agreement = std::unique_ptr<LatticeAgreement>(new LatticeAgreement(
         host_lookup, static_cast<uint8_t>(parser.id()),
-        [id](std::unordered_set<propose_value> decided_set, uint64_t round) {
-            std::cout << "Decided: " << round << std::endl;
-            // std::string result = "Round " + std::to_string(round) + " set: ";
-            std::string result;
+        [id](const std::string &decided_set, uint64_t round) {
+            // std::cout << "Decided: " << round <<
+            // std::endl; std::string result = "Round " +
+            // std::to_string(round) + " set: ";
 
-            // std::cout << "Round: " << round << " set: ";
-            for (auto value : decided_set) {
-                // std::cout << " " << value;
-                result += std::to_string(value) + " ";
-            }
-
-            result.pop_back();
-
-            output_file->write(result + "\n");
+            output_file->write(decided_set + "\n");
         }));
 
     std::thread([config]() {

@@ -26,7 +26,7 @@ public:
         this->close();
     }
 
-    void write(const std::string output) {
+    void write(const std::string &output) {
         this->lock.lock();
         if (output.length() + this->cache_size > CACHE_CAPACITY) {
             this->file.write(this->cache.get(), this->cache_size);
