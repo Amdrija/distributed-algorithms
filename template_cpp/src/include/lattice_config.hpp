@@ -13,31 +13,31 @@ public:
     uint32_t round_count;
     uint32_t set_max_size;
     uint32_t distinct_count;
-    std::vector<std::unordered_set<propose_value>> proposals;
+    std::ifstream file;
 
-    LatticeConfig(const std::string &file_name) {
-        std::ifstream file(file_name);
+    LatticeConfig(const std::string &file_name) : file(file_name) {
+        this->file >> this->round_count;
+        this->file >> this->set_max_size;
+        this->file >> this->distinct_count;
 
-        file >> this->round_count;
-        file >> this->set_max_size;
-        file >> this->distinct_count;
-
-        this->proposals =
-            std::vector<std::unordered_set<propose_value>>(this->round_count);
         std::string trash;
         std::getline(file, trash);
-        for (uint64_t i = 0; i < this->round_count; i++) {
-            std::string line;
-            std::getline(file, line);
+    }
 
-            std::istringstream input(line);
-            propose_value value;
+    ~LatticeConfig() { this->file.close(); }
 
-            this->proposals[i] = std::unordered_set<propose_value>();
-            while (input >> value) {
-                proposals[i].insert(value);
-            }
+    std::unordered_set<propose_value> get_proposal() {
+        std::string line;
+        std::getline(file, line);
+
+        std::istringstream input(line);
+        propose_value value;
+
+        auto proposal = std::unordered_set<propose_value>();
+        while (input >> value) {
+            proposal.insert(value);
         }
-        file.close();
+
+        return proposal;
     }
 };

@@ -121,14 +121,6 @@ int main(int argc, char **argv) {
     std::cout << "Rounds: " << config.round_count << std::endl;
     std::cout << "Set max size: " << config.set_max_size << std::endl;
     std::cout << "Distinct count: " << config.distinct_count << std::endl;
-    int i = 0;
-    for (auto set : config.proposals) {
-        std::cout << "Proposed set " << ++i;
-        for (auto value : set) {
-            std::cout << " " << value;
-        }
-        std::cout << std::endl;
-    }
 
     auto id = parser.id();
     agreement = std::unique_ptr<LatticeAgreement>(new LatticeAgreement(
@@ -141,9 +133,10 @@ int main(int argc, char **argv) {
             output_file->write(decided_set + "\n");
         }));
 
-    std::thread([config]() {
+    std::thread([&config]() {
         for (uint64_t i = 0; i < config.round_count; i++) {
-            if (!agreement->propose(i + 1, config.proposals[i])) {
+            auto proposal = config.get_proposal();
+            if (!agreement->propose(i + 1, proposal)) {
                 break;
             }
         }
